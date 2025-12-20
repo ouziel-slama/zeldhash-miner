@@ -1,0 +1,18 @@
+[workspace]
+members = [
+  "crates/*",
+  "facades/rust",
+]
+resolver = "2"
+
+[workspace.dependencies]
+bitcoin = { version = "0.32", features = ["base64", "std"] }
+hex = { version = "0.4", default-features = false, features = ["std"] }
+pollster = { version = "0.3" }
+rayon = { version = "1.7" }
+serde = { version = "1", features = ["derive"] }
+thiserror = "1.0"
+zeldhash-miner-core = { path = "crates/core" }
+zeldhash-miner-gpu = { path = "crates/gpu" }
+zeldhash-miner-kernel = { path = "crates/kernel" }
+zeldhash-miner-wasm = { path = "crates/wasm" }

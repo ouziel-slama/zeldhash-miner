@@ -1,0 +1,29 @@
+[package]
+name = "zeldhash-miner-gpu"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "WebGPU mining runner for ZeldMiner"
+
+[dependencies]
+zeldhash-miner-core = { workspace = true }
+wgpu = { version = "0.19", features = ["webgpu"] }
+pollster = "0.3"
+thiserror = "1"
+bytemuck = { version = "1.14", features = ["derive"] }
+futures = "0.3"
+
+[features]
+default = ["gpu"]
+# Primary WebGPU path uses WGSL so it works in browsers.
+wgsl = []
+# Keep a native SPIR-V path for experimentation; not enabled on the web.
+native-spirv = []
+# Umbrella feature to enable GPU support in dependents (zeldhash-miner-wasm).
+gpu = ["wgsl"]
+web = ["gpu"]
+
+[build-dependencies]
+spirv-builder = "0.9"
+zeldhash-miner-kernel = { workspace = true }
+

@@ -1,0 +1,15 @@
+[package]
+name = "zeldhash-miner-python-core"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+zeldhash-miner-core = { workspace = true }
+zeldhash-miner-gpu = { workspace = true, optional = true }
+
+[features]
+default = ["cpu"]
+cpu = []
+gpu = ["zeldhash-miner-gpu"]
+

@@ -1,0 +1,24 @@
+[package]
+name = "zeldhash-miner"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+hex = { workspace = true }
+pollster = { workspace = true, optional = true }
+rayon = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+thiserror = { workspace = true }
+zeldhash-miner-core = { workspace = true }
+zeldhash-miner-gpu = { workspace = true, optional = true }
+
+[dev-dependencies]
+bitcoin = { workspace = true }
+
+[features]
+default = ["cpu", "gpu", "rayon", "serde"]
+cpu = []
+gpu = ["zeldhash-miner-gpu", "pollster"]
+rayon = ["dep:rayon"]
+serde = ["dep:serde"]
+

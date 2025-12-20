@@ -1,0 +1,19 @@
+[package]
+name = "zeldhash-miner-kernel"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["dylib"]
+
+[dependencies]
+spirv-std = "0.9"
+
+[package.metadata.docs.rs]
+targets = ["spirv-unknown-spv1.5"]
+
+[build-dependencies]
+spirv-builder = "0.9"
+
+
