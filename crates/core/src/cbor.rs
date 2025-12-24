@@ -4,7 +4,7 @@
 //! - Unsigned integers (major type 0)
 //! - Arrays (major type 4)
 
-use alloc::vec::Vec;
+use alloc::{vec, vec::Vec};
 
 /// CBOR major type 0: unsigned integer
 const MAJOR_TYPE_UINT: u8 = 0x00;

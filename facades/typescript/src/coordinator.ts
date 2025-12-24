@@ -327,9 +327,14 @@ export class MiningCoordinator {
       throw new Error("Mining parameters are missing");
     }
 
-    const stride = this.stride;
-    const targetZeros = this.targetZeros;
+    const inputs = this.txInputs;
+    const outputs = this.txOutputs;
+    const network = this.txNetwork;
+    const satsPerVbyte = this.satsPerVbyte;
     const template = this.template;
+    const targetZeros = this.targetZeros;
+    const distribution = this.txDistribution;
+    const stride = this.stride;
 
     this.workers.forEach((state, idx) => {
       state.processedBase = 0n;
@@ -342,16 +347,16 @@ export class MiningCoordinator {
 
       const message: WorkerMessage = {
         type: "mine",
-        inputs: this.txInputs,
-        outputs: this.txOutputs,
-        network: this.txNetwork,
-        satsPerVbyte: this.satsPerVbyte,
+        inputs,
+        outputs,
+        network,
+        satsPerVbyte,
         template,
         startNonce: workerStart,
         batchSize: this.batchSize,
         targetZeros,
         nonceStep: stride,
-        distribution: this.txDistribution,
+        distribution,
       };
 
       state.worker.postMessage(message);
@@ -384,6 +389,13 @@ export class MiningCoordinator {
       this.startedAt = performance.now();
     }
 
+    const inputs = this.txInputs;
+    const outputs = this.txOutputs;
+    const network = this.txNetwork;
+    const satsPerVbyte = this.satsPerVbyte;
+    const template = this.template;
+    const targetZeros = this.targetZeros as number;
+    const distribution = this.txDistribution;
     const stride = this.stride;
 
     this.workers.forEach((state, idx) => {
@@ -395,16 +407,16 @@ export class MiningCoordinator {
 
       const message: WorkerMessage = {
         type: "mine",
-        inputs: this.txInputs,
-        outputs: this.txOutputs,
-        network: this.txNetwork,
-        satsPerVbyte: this.satsPerVbyte,
-        template: this.template,
+        inputs,
+        outputs,
+        network,
+        satsPerVbyte,
+        template,
         startNonce: workerStart,
         batchSize: this.batchSize,
-        targetZeros: this.targetZeros as number,
+        targetZeros,
         nonceStep: stride,
-        distribution: this.txDistribution,
+        distribution,
       };
 
       state.worker.postMessage(message);

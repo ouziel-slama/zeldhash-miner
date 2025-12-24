@@ -8,9 +8,10 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"],
     "outDir": "dist",
     "rootDir": "src",
-    "types": ["vite/client"]
+    "types": ["vite/client", "@webgpu/types"]
   },
   "include": ["src/**/*"],
   "exclude": ["dist", "node_modules"]

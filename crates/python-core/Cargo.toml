@@ -2,6 +2,8 @@
 name = "zeldhash-miner-python-core"
 version = "0.1.0"
 edition = "2021"
+authors = ["Ouziel Slama <ouziel@gmail.com>"]
+license = "MIT"
 publish = false
 
 [dependencies]

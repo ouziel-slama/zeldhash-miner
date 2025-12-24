@@ -1,6 +1,7 @@
 {
   "name": "zeldhash-demo",
   "version": "0.1.0",
+  "author": "Ouziel Slama <ouziel@gmail.com>",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,7 +13,7 @@
   "dependencies": {
     "bitcoinjs-lib": "^6.1.6",
     "buffer": "^6.0.3",
-    "zeldminer": "file:../../facades/typescript"
+    "zeldhash-miner": "file:../../facades/typescript"
   },
   "devDependencies": {
     "@types/node": "^22.9.4",

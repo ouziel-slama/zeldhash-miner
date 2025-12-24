@@ -1,4 +1,4 @@
-# zeldminer (TypeScript SDK)
+# zeldhash-miner (TypeScript SDK)
 
 TypeScript SDK for Zeldhash mining in the browser. This package wraps the Rust/WASM miner, exposes a simple API for mining vanity Bitcoin txids, and supports optional WebGPU acceleration.
 
@@ -7,7 +7,7 @@ TypeScript SDK for Zeldhash mining in the browser. This package wraps the Rust/W
 ## Installation
 
 ```bash
-npm install zeldminer
+npm install zeldhash-miner
 ```
 
 If you are developing locally from the monorepo, run the full pipeline to regenerate WASM bindings, library bundle, and demo:
@@ -19,7 +19,7 @@ If you are developing locally from the monorepo, run the full pipeline to regene
 ## Quick Start
 
 ```ts
-import { ZeldMiner, ZeldMinerErrorCode } from "zeldminer";
+import { ZeldMiner, ZeldMinerErrorCode } from "zeldhash-miner";
 
 const miner = new ZeldMiner({
   network: "mainnet",
@@ -164,7 +164,7 @@ await miner.mineTransaction({
 ## Error Handling
 
 ```ts
-import { ZeldMinerError, ZeldMinerErrorCode } from "zeldminer";
+import { ZeldMinerError, ZeldMinerErrorCode } from "zeldhash-miner";
 
 try {
   await miner.mineTransaction(params);
@@ -200,11 +200,11 @@ try {
 | `WEBGPU_NOT_AVAILABLE` | WebGPU requested but unavailable |
 | `WORKER_ERROR` | Internal worker failure |
 | `MINING_ABORTED` | Mining was stopped |
-| `DUST_OUTPUT` | Output below dust limit (546 sats) |
+| `DUST_OUTPUT` | Output below dust limit (310 sats P2WPKH / 330 sats P2TR) |
 
 ## Runtime Notes
 
-- The WASM artifacts live in `node_modules/zeldminer/wasm`. Most modern bundlers copy them automatically because the SDK loads them via `new URL("./wasm/zeldhash_miner_wasm_bg.wasm", import.meta.url)`.
+- The WASM artifacts live in `node_modules/zeldhash-miner/wasm`. Most modern bundlers copy them automatically because the SDK loads them via `new URL("./wasm/zeldhash_miner_wasm_bg.wasm", import.meta.url)`.
 - If your bundler does not copy assets automatically, copy the `wasm/` folder to your public/static assets.
 - WebGPU is optional. When `useWebGPU` is `true`, the miner auto-detects support and silently falls back to CPU.
 
@@ -236,3 +236,9 @@ Release flows are documented in [docs/RELEASING.md](../../docs/RELEASING.md).
 ## License
 
 MIT
+
+### Framework Integration
+
+For detailed setup instructions for different frameworks (Vite, Next.js, CRA, etc.), see:
+
+📖 **[docs/INTEGRATION.md](../../docs/INTEGRATION.md)**

@@ -23,7 +23,7 @@ const installWebGpuLimitShim = (): void => {
   ): Promise<GPUDevice> {
     if (descriptor?.requiredLimits && typeof this.limits === "object") {
       const limits = descriptor.requiredLimits as Record<string, unknown>;
-      const supported = this.limits as Record<string, unknown>;
+      const supported = this.limits as unknown as Record<string, unknown>;
       for (const key of Object.keys(limits)) {
         if (!(key in supported) || supported[key] === undefined) {
           delete limits[key];

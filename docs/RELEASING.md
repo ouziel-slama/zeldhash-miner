@@ -1,6 +1,6 @@
 # Releasing Zeldhash Miner
 
-This repository ships three artifacts: the Rust crate (`zeldhash-miner`), the npm package (`zeldminer`), and a future Python wheel (via `crates/python-core`). The TypeScript facade and the web demo depend on the WASM bindings built from `crates/wasm`.
+This repository ships three artifacts: the Rust crate (`zeldhash-miner`), the npm package (`zeldhash-miner`), and a future Python wheel (via `crates/python-core`). The TypeScript facade and the web demo depend on the WASM bindings built from `crates/wasm`.
 
 ## Pre-flight checklist
 
@@ -10,6 +10,7 @@ This repository ships three artifacts: the Rust crate (`zeldhash-miner`), the np
   - `cargo test -p zeldhash-miner-core`
   - `cargo test -p zeldhash-miner` (add `--no-default-features --features "cpu serde"` when you need CPU-only coverage)
   - `wasm-pack build crates/wasm --target web` or `./scripts/build-wasm.sh` to refresh `facades/typescript/wasm/` and `examples/web-demo/public/wasm/`
+    - GPU on by default (`WASM_GPU=1`); set `WASM_GPU=0` (or `false`) to force CPU-only when rust-gpu toolchains are unavailable.
   - `npm test --prefix facades/typescript`
   - `npm run build --prefix examples/web-demo` (smoke test the demo)
 - Make sure `pkg/` outputs remain untracked; `scripts/build-wasm.sh` copies the canonical artifacts into `facades/typescript/wasm/`.
@@ -24,12 +25,13 @@ This repository ships three artifacts: the Rust crate (`zeldhash-miner`), the np
    # optionally: CRATE_DIR=path/to/crate ALLOW_DIRTY=1 ./scripts/release-crate.sh
    ```
 
-## Releasing the npm package (`zeldminer`)
+## Releasing the npm package (`zeldhash-miner`)
 
 1. Bump the version in `facades/typescript/package.json` and `package-lock.json`.
 2. Regenerate WASM artifacts:
    ```bash
    ./scripts/build-wasm.sh   # copies outputs into facades/typescript/wasm/ and the demo
+   # GPU on by default; use WASM_GPU=0 or WASM_GPU=false for CPU-only
    ```
 3. Build and publish the package:
    ```bash

@@ -2,6 +2,13 @@
 name = "zeldhash-miner-core"
 version = "0.1.0"
 edition = "2021"
+authors = ["Ouziel Slama <ouziel@gmail.com>"]
+license = "MIT"
+description = "Core cryptographic and transaction-building primitives for Zeldhash miner"
+repository = "https://github.com/zeldhash/zeldhash-miner"
+homepage = "https://github.com/zeldhash/zeldhash-miner"
+keywords = ["bitcoin", "mining", "psbt", "crypto"]
+categories = ["cryptography", "cryptography::cryptocurrencies"]
 
 [features]
 default = ["std"]
@@ -12,7 +19,7 @@ std = []
 sha2 = { version = "0.10", default-features = false }
 bech32 = { version = "0.11", default-features = false, features = ["alloc"] }
 hex = { version = "0.4", default-features = false, features = ["alloc"] }
-thiserror = { version = "1.0.69", default-features = false }
+thiserror = { version = "2.0.17", default-features = false }
 base64 = { version = "0.21", default-features = false, features = ["alloc"] }
 
 [dev-dependencies]

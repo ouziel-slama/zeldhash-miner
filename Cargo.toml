@@ -12,7 +12,14 @@ pollster = { version = "0.3" }
 rayon = { version = "1.7" }
 serde = { version = "1", features = ["derive"] }
 thiserror = "1.0"
-zeldhash-miner-core = { path = "crates/core" }
-zeldhash-miner-gpu = { path = "crates/gpu" }
-zeldhash-miner-kernel = { path = "crates/kernel" }
-zeldhash-miner-wasm = { path = "crates/wasm" }
+zeldhash-miner-core = { version = "0.1.0", path = "crates/core" }
+zeldhash-miner-gpu = { version = "0.1.0", path = "crates/gpu" }
+zeldhash-miner-wasm = { version = "0.1.0", path = "crates/wasm" }
+# Note: zeldhash-miner-kernel is not in workspace deps because it's publish = false
+# and only used as a build-time dep for the experimental native-spirv feature.
+
+# Ensure deterministic WASM outputs so the generated JS/TS bindings stop
+# changing across builds. Limit the tighter settings to the WASM crate so other
+# packages keep their default parallel codegen.
+[profile.release.package."zeldhash-miner-wasm"]
+codegen-units = 1

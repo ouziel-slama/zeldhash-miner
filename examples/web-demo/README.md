@@ -1,6 +1,6 @@
 # Zeldhash Miner — Web Demo
 
-Interactive browser demo showcasing the [zeldminer](../../facades/typescript/README.md) TypeScript SDK. Mine Bitcoin vanity transactions with leading-zero txids directly in your browser.
+Interactive browser demo showcasing the [zeldhash-miner](../../facades/typescript/README.md) TypeScript SDK. Mine Bitcoin vanity transactions with leading-zero txids directly in your browser.
 
 ## Features
 
@@ -59,7 +59,7 @@ The built files will be in `dist/`.
 ## Technical Details
 
 - Built with Vite + TypeScript
-- Consumes `zeldminer` from `../../facades/typescript`
+- Consumes `zeldhash-miner` from `../../facades/typescript`
 - Uses `bitcoinjs-lib` for PSBT parsing
 - WebGPU batch size: 65,536 hashes
 - CPU batch size: 256 hashes

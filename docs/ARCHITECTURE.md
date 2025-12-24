@@ -42,7 +42,7 @@ The miner constructs a Bitcoin transaction with an `OP_RETURN` output containing
 ┌─────────────────────────────────────────────────────────────┐
 │                    Applications / Demos                     │
 ├─────────────────────────────────────────────────────────────┤
-│   zeldminer (TypeScript SDK)    │    zeldhash-miner (Rust)  │
+│   zeldhash-miner (TypeScript SDK)    │    zeldhash-miner (Rust)  │
 ├─────────────────────────────────────────────────────────────┤
 │              zeldhash-miner-wasm (WASM bindings)            │
 ├─────────────────────────────────────────────────────────────┤
@@ -233,7 +233,7 @@ fn mine_segment_cpu_parallel(...) -> Result<ControlledMineResult> {
 }
 ```
 
-### zeldminer (TypeScript SDK)
+### zeldhash-miner (TypeScript SDK)
 
 Browser-facing API with Web Workers:
 
@@ -551,7 +551,7 @@ fn parses_psbt_with_bitcoin_crate() {
 
 | Constant           | Value     | Purpose                  |
 |--------------------|-----------|--------------------------|
-| DUST_LIMIT         | 546 sats  | Minimum output           |
+| DUST_LIMIT         | 310/330 sats | Minimum output (P2WPKH / P2TR) |
 | MAX_TARGET_ZEROS   | 32        | Maximum difficulty       |
 | WORKGROUP_SIZE     | 256       | GPU threads/group        |
 | MAX_RESULTS        | 8         | GPU result capacity      |

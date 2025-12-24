@@ -2,6 +2,13 @@
 name = "zeldhash-miner-wasm"
 version = "0.1.0"
 edition = "2021"
+authors = ["Ouziel Slama <ouziel@gmail.com>"]
+license = "MIT"
+description = "WASM bindings for the Zeldhash miner with optional WebGPU acceleration"
+repository = "https://github.com/zeldhash/zeldhash-miner"
+homepage = "https://github.com/zeldhash/zeldhash-miner"
+keywords = ["bitcoin", "mining", "wasm", "webgpu"]
+categories = ["cryptography", "cryptography::cryptocurrencies", "wasm"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]

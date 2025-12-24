@@ -1,0 +1,15 @@
+# Exclude test files
+src/
+*.test.ts
+__fixtures__/
+
+# Exclude source config
+tsconfig*.json
+vite.config.ts
+
+# Include dist and wasm (handled by package.json "files", but we need this to override gitignore-like behavior)
+!dist/
+!wasm/
+!LICENSE
+!README.md
+

@@ -15,7 +15,12 @@ const TXID_REGEX = /^[0-9a-fA-F]{64}$/;
 const HEX_REGEX = /^[0-9a-fA-F]+$/;
 const MAX_U64 = (1n << 64n) - 1n;
 const MAX_U32 = 0xffff_ffff;
-const DUST_LIMIT = 546;
+
+const dustLimitForAddress = (addressType?: "p2wpkh" | "p2tr"): number => {
+  if (addressType === "p2tr") return 330;
+  if (addressType === "p2wpkh") return 310;
+  return 546; // conservative fallback for unexpected types
+};
 
 const formatError = (err: unknown): string =>
   err instanceof Error ? err.message : String(err);
@@ -240,6 +245,7 @@ export class TransactionBuilder {
     outputs.forEach((output, idx) => {
       const validation = wasm.validate_address(output.address, net);
       this.validateAddressResult(validation, idx, net);
+      const dustLimit = dustLimitForAddress(validation.addressType);
 
       if (output.change) {
         if (
@@ -255,12 +261,12 @@ export class TransactionBuilder {
       } else {
         if (
           !Number.isInteger(output.amount) ||
-          (output.amount as number) < DUST_LIMIT
+          (output.amount as number) < dustLimit
         ) {
           throw createMinerError(
             ZeldMinerErrorCode.DUST_OUTPUT,
-            `outputs[${idx}].amount must be at least ${DUST_LIMIT} sats`,
-            { index: idx }
+            `outputs[${idx}].amount must be at least ${dustLimit} sats`,
+            { index: idx, addressType: validation.addressType }
           );
         }
       }

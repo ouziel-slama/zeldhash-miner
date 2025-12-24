@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TransactionBuilder } from "./builder";
 import { ZeldMinerError } from "./errors";
+import type {
+  MiningTemplate,
+  Network,
+  TxInput,
+  TxOutput,
+  ValidationResult,
+} from "./types";
 import { ZeldMinerErrorCode } from "./types";
 
 const mockTemplate = {
@@ -9,9 +16,26 @@ const mockTemplate = {
 };
 
 const mockWasm = {
-  validate_address: vi.fn(() => ({ ok: true, network: "testnet" })),
-  build_mining_template: vi.fn(() => mockTemplate),
-  build_psbt: vi.fn(() => "psbt"),
+  validate_address: vi.fn<[string, Network], ValidationResult>(() => ({
+    ok: true,
+    network: "testnet",
+  })),
+  build_mining_template: vi.fn<
+    [
+      TxInput[],
+      TxOutput[],
+      Network,
+      bigint,
+      bigint,
+      number,
+      bigint[] | null | undefined
+    ],
+    MiningTemplate
+  >(() => mockTemplate),
+  build_psbt: vi.fn<
+    [TxInput[], TxOutput[], Network, bigint, bigint, bigint[] | null | undefined],
+    string
+  >(() => "psbt"),
 };
 
 vi.mock("./wasm", () => ({

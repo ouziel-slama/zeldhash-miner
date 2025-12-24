@@ -15,9 +15,20 @@ mkdir -p "${WEB_WASM_DIR}"
 export RUSTFLAGS=--cfg=web_sys_unstable_apis
 
 # Default to GPU-enabled builds so the WebGPU demo ships the right bindings.
-# Override with WASM_GPU=0 to force a CPU-only build (e.g., when rust-gpu is
-# unavailable on the host).
-WASM_GPU="${WASM_GPU:-1}"
+# Accept truthy/falsey inputs (1/0, true/false, yes/no) to avoid CI mismatches.
+normalize_bool() {
+  local raw="${1:-}"
+  # Bash on macOS (v3) lacks `${var,,}`; use tr for portability.
+  local lowered
+  lowered="$(printf '%s' "${raw}" | tr '[:upper:]' '[:lower:]')"
+  case "${lowered}" in
+    1|true|yes|on) echo 1 ;;
+    0|false|no|off) echo 0 ;;
+    *) echo 1 ;; # default to GPU-enabled
+  esac
+}
+
+WASM_GPU="$(normalize_bool "${WASM_GPU:-1}")"
 WASM_PACK_ARGS=(--target web)
 
 if [[ "${WASM_GPU}" == "1" ]]; then
@@ -33,7 +44,8 @@ wasm-pack build "${WASM_PACK_ARGS[@]}"
 popd >/dev/null
 
 # Sync the generated pkg into the destinations the JS packages expect.
-rsync -a --delete "${PKG_DIR}/" "${OUT_DIR}/"
+# Exclude .gitignore so npm pack includes the wasm artifacts.
+rsync -a --delete --exclude='.gitignore' "${PKG_DIR}/" "${OUT_DIR}/"
 
 TYPES_FILE="${OUT_DIR}/zeldhash_miner_wasm.d.ts"
 if [ ! -f "${TYPES_FILE}" ]; then

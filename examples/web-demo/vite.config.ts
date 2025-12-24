@@ -18,7 +18,7 @@ export default defineConfig({
   resolve: {
     alias: {
       buffer: "buffer",
-      zeldminer: resolve(__dirname, "../../facades/typescript/src"),
+      "zeldhash-miner": resolve(__dirname, "../../facades/typescript/src"),
     },
   },
   optimizeDeps: {

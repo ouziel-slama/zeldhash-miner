@@ -4,13 +4,28 @@
 # Node / frontend artifacts
 node_modules/
 **/node_modules/
+
+# Legacy paths (pre-refactor)
 web/dist/
 web/.vite/
 web/public/wasm/
 packages/zeldminer/dist/
 packages/zeldminer/.vite/
 packages/zeldminer/node_modules/
-crates/zeldhash-miner-wasm/pkg/
+
+# Current TypeScript facade outputs
+facades/typescript/dist/
+facades/typescript/.vite/
+facades/typescript/node_modules/
+
+# Demo app outputs
+examples/web-demo/dist/
+examples/web-demo/.vite/
+examples/web-demo/node_modules/
+examples/web-demo/public/wasm/
+
+# WASM build artifacts
+crates/wasm/pkg/
 
 
 # Byte-compiled / optimized / DLL files

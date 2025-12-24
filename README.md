@@ -18,7 +18,7 @@ Zeldhash Miner provides two similar SDKs with matching APIs:
 | SDK | Package | Documentation |
 |-----|---------|---------------|
 | **Rust** | [`zeldhash-miner`](https://crates.io/crates/zeldhash-miner) | [facades/rust/README.md](facades/rust/README.md) |
-| **TypeScript** | [`zeldminer`](https://www.npmjs.com/package/zeldminer) | [facades/typescript/README.md](facades/typescript/README.md) |
+| **TypeScript** | [`zeldhash-miner`](https://www.npmjs.com/package/zeldhash-miner) | [facades/typescript/README.md](facades/typescript/README.md) |
 
 Both SDKs expose the same core functionality:
 - `ZeldMiner` orchestrator with `mine_transaction()` / `mineTransaction()`
@@ -38,7 +38,7 @@ zeldhash-miner/
 │   └── python-core/           # Placeholder for pyo3 wheel
 ├── facades/
 │   ├── rust/                  # Crates.io SDK (zeldhash-miner)
-│   └── typescript/            # npm SDK (zeldminer) + WASM artifacts
+│   └── typescript/            # npm SDK (zeldhash-miner) + WASM artifacts
 ├── examples/
 │   └── web-demo/              # Vite demo consuming the TypeScript SDK
 ├── scripts/                   # Build & release automation
@@ -81,7 +81,7 @@ println!("Found nonce {}", result.nonce);
 ### TypeScript
 
 ```ts
-import { ZeldMiner } from "zeldminer";
+import { ZeldMiner } from "zeldhash-miner";
 
 const miner = new ZeldMiner({
   network: "mainnet",

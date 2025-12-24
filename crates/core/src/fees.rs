@@ -38,13 +38,18 @@ pub fn calculate_fee(vsize: usize, sat_per_vbyte: u64) -> u64 {
 }
 
 /// Compute change amount, enforcing dust and sufficient funds rules.
-pub fn calculate_change(total_input: u64, outputs_sum: u64, fee: u64) -> Result<u64, FeeError> {
+pub fn calculate_change(
+    total_input: u64,
+    outputs_sum: u64,
+    fee: u64,
+    dust_limit: u64,
+) -> Result<u64, FeeError> {
     if total_input < outputs_sum + fee {
         return Err(FeeError::InsufficientFunds);
     }
 
     let change = total_input - outputs_sum - fee;
-    if change < 546 {
+    if change < dust_limit {
         return Err(FeeError::DustOutput);
     }
 
@@ -157,10 +162,11 @@ mod tests {
 
     #[test]
     fn detects_insufficient_funds_and_dust() {
-        let err = calculate_change(10_000, 9_500, 600).unwrap_err();
+        let err = calculate_change(10_000, 9_500, 600, 330).unwrap_err();
         assert_eq!(err, FeeError::InsufficientFunds);
 
-        let err = calculate_change(10_000, 9_400, 200).unwrap_err();
+        // Construct a change amount below the dust limit (400 change was no longer dust).
+        let err = calculate_change(10_000, 9_400, 271, 330).unwrap_err(); // change = 329
         assert_eq!(err, FeeError::DustOutput);
     }
 

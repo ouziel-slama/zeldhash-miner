@@ -1,0 +1,53 @@
+name: cargo tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    environment: default
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install system dependencies (GPU build)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libasound2-dev libudev-dev pkg-config libxkbcommon-dev libwayland-dev
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+          profile: minimal
+      - uses: Swatinem/rust-cache@v2
+      - name: Install wasm32 target
+        run: rustup target add wasm32-unknown-unknown
+      - name: Install wasm-pack
+        run: curl -sSf https://rustwasm.github.io/wasm-pack/installer/init.sh | sh
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov
+      - name: Check no-std core
+        run: cargo check -p zeldhash-miner-core --no-default-features
+      - name: Build wasm bindings
+        run: wasm-pack build crates/wasm --target web
+      - name: Run tests with coverage (CPU/GPU host targets)
+        run: cargo llvm-cov --workspace --all-features --exclude zeldhash-miner-wasm --lcov --output-path coverage.lcov
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.lcov
+          flags: rust
+          fail_ci_if_error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+

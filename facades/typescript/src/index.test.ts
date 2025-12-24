@@ -50,7 +50,7 @@ vi.mock("./builder", () => {
 vi.mock("./coordinator", () => {
   return {
     MiningCoordinator: class {
-      private readonly listeners: Record<string, Set<(payload: any) => void>> = {
+      private readonly listeners: Record<string, Set<(payload?: any) => void>> = {
         progress: new Set(),
         found: new Set(),
         error: new Set(),

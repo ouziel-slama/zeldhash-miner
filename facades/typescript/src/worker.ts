@@ -11,6 +11,8 @@ import { ZeldMinerErrorCode } from "./types";
 import { splitNonceSegments, splitNonceSegmentsCbor } from "./nonce";
 import { loadWasm } from "./wasm";
 
+type MineMessage = Extract<WorkerMessage, { type: "mine" }>;
+
 const ctx = self as unknown as DedicatedWorkerGlobalScope;
 const workerId =
   (ctx as DedicatedWorkerGlobalScope & { name?: string }).name ?? undefined;
@@ -69,14 +71,14 @@ const ensureTemplateForSegment = async (
   cache: TemplateCache,
   wasm: WasmExports,
   params: {
-    inputs: WorkerMessage["inputs"];
-    outputs: WorkerMessage["outputs"];
+    inputs: MineMessage["inputs"];
+    outputs: MineMessage["outputs"];
     satsPerVbyte: number;
     distribution?: bigint[];
     useCborNonce: boolean;
   },
   segment: { start: bigint; size: number; nonceLength: number },
-  normalizedNetwork: WorkerMessage["network"]
+  normalizedNetwork: MineMessage["network"]
 ): Promise<WorkerTemplate> => {
   const cached = cache.get(segment.nonceLength);
   if (cached) {
@@ -137,10 +139,7 @@ const runBatch = async (
   );
 };
 
-const mineLoop = async (
-  msg: WorkerMessage & { nonceStep?: bigint },
-  abort: AbortController
-): Promise<void> => {
+const mineLoop = async (msg: MineMessage, abort: AbortController): Promise<void> => {
   let wasm: WasmExports;
   try {
     wasm = await loadWasm();
@@ -313,7 +312,7 @@ const mineLoop = async (
   }
 };
 
-const startMining = (msg: WorkerMessage & { nonceStep?: bigint }): void => {
+const startMining = (msg: MineMessage): void => {
   const abort = new AbortController();
   miningAbort?.abort();
   miningAbort = abort;

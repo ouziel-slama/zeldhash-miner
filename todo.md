@@ -68,7 +68,7 @@ Action Plan (repo to target layout)
   - Add a placeholder `crates/python-core/` (pyo3 target) and wire it into the workspace when ready; keep API surface aligned with core/gpu.
 
 - TypeScript facade
-  - Move `packages/zeldminer` to `facades/typescript/` keeping the npm name `zeldminer`.
+- Move `packages/zeldhash-miner` to `facades/typescript/` keeping the npm name `zeldhash-miner`.
   - Relocate the wasm artifacts to `facades/typescript/wasm/` (copied from `crates/wasm/pkg/`) and update `wasm.ts` imports/URL resolution to the new relative path.
   - Update `tsconfig`, `vite.config`, tests, and path references to the new folder depth (e.g., fixtures/worker paths, worker entry).
 
@@ -92,5 +92,5 @@ Points of attention / do-not-break
 - Preserve crate names and features (`cpu`, `gpu`, `rayon`, `serde`) so dependent code continues to compile; watch for path/feature assumptions in `src/lib.rs` and `crates/*`.
 - Ensure the wasm artifact loading still resolves correctly in both the npm package (ESM import URL) and the demo (Vite public path); broken asset paths are the likeliest regression.
 - After moving files, re-run tests/builds: `cargo test -p zeldhash-miner-core`, `cargo test -p zeldhash-miner`, `wasm-pack build crates/wasm --target web`, `npm test --prefix facades/typescript`, and Vite build for the demo.
-- Audit relative imports inside `packages/zeldminer/src` (workers, fixtures) after the move; adjust any hardcoded `../wasm` or `../../` paths.
+- Audit relative imports inside `packages/zeldhash-miner/src` (workers, fixtures) after the move; adjust any hardcoded `../wasm` or `../../` paths.
 - Keep the workspace root clean (no src/) once the orchestrator moves; double-check `Cargo.lock` and `package-lock.json` paths when relocating folders to avoid stale lockfiles.

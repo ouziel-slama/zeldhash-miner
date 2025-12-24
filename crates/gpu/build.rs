@@ -1,16 +1,28 @@
 fn main() {
     // Skip SPIR-V generation unless the native-spirv feature is enabled.
-    let has_spirv_feature = std::env::var_os("CARGO_FEATURE_NATIVE_SPIRV").is_some();
+    #[cfg(feature = "native-spirv")]
+    build_spirv();
+
+    #[cfg(not(feature = "native-spirv"))]
+    {
+        let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
+        if target_arch != "wasm32" {
+            println!(
+                "cargo:warning=Skipping SPIR-V build (native-spirv feature disabled or wasm target)"
+            );
+        }
+    }
+}
+
+#[cfg(feature = "native-spirv")]
+fn build_spirv() {
+    use spirv_builder::{Capability, MetadataPrintout, ModuleResult, SpirvBuilder};
+
     let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
-    if !has_spirv_feature || target_arch == "wasm32" {
-        println!(
-            "cargo:warning=Skipping SPIR-V build (native-spirv feature disabled or wasm target)"
-        );
+    if target_arch == "wasm32" {
+        println!("cargo:warning=Skipping SPIR-V build for wasm target");
         return;
     }
-
-    // Only compile when explicitly requested.
-    use spirv_builder::{Capability, MetadataPrintout, ModuleResult, SpirvBuilder};
 
     // Kernel crate lives under crates/kernel after repo layout move.
     let result = SpirvBuilder::new("../kernel", "spirv-unknown-spv1.5")

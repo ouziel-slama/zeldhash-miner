@@ -98,7 +98,8 @@ describe("PSBT parsing", () => {
     const nonceLe = nonceBytes.readUIntLE(0, nonceBytes.length);
     expect(BigInt(nonceLe)).toBe(MAINNET_REAL_CASE.nonce);
 
-    const txid = psbt.__CACHE?.__TX?.getId?.();
+    const txid = (psbt as unknown as { __CACHE?: { __TX?: { getId?: () => string } } })
+      .__CACHE?.__TX?.getId?.();
     expect(txid).toBe(MAINNET_REAL_CASE.expectedTxid);
   });
 });

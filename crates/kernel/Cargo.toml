@@ -2,7 +2,15 @@
 name = "zeldhash-miner-kernel"
 version = "0.1.0"
 edition = "2021"
+authors = ["Ouziel Slama <ouziel@gmail.com>"]
+license = "MIT"
+description = "SPIR-V kernel shaders for the Zeldhash miner GPU backend"
 publish = false
+repository = "https://github.com/zeldhash/zeldhash-miner"
+homepage = "https://github.com/zeldhash/zeldhash-miner"
+keywords = ["bitcoin", "mining", "gpu", "spirv", "wgsl"]
+categories = ["cryptography"]
+documentation = "https://docs.rs/zeldhash-miner-kernel"
 
 [lib]
 crate-type = ["dylib"]

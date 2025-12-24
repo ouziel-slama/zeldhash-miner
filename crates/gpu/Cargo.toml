@@ -2,8 +2,13 @@
 name = "zeldhash-miner-gpu"
 version = "0.1.0"
 edition = "2021"
-license = "MIT OR Apache-2.0"
+authors = ["Ouziel Slama <ouziel@gmail.com>"]
+license = "MIT"
 description = "WebGPU mining runner for ZeldMiner"
+repository = "https://github.com/zeldhash/zeldhash-miner"
+homepage = "https://github.com/zeldhash/zeldhash-miner"
+keywords = ["bitcoin", "mining", "gpu", "webgpu", "wgpu"]
+categories = ["cryptography", "cryptography::cryptocurrencies"]
 
 [dependencies]
 zeldhash-miner-core = { workspace = true }
@@ -13,17 +18,18 @@ thiserror = "1"
 bytemuck = { version = "1.14", features = ["derive"] }
 futures = "0.3"
 
+# Build dependencies are only needed for native-spirv experimental path.
+# The kernel crate is resolved via spirv-builder from ../kernel path in build.rs.
+[build-dependencies]
+spirv-builder = { version = "0.9", optional = true }
+
 [features]
 default = ["gpu"]
 # Primary WebGPU path uses WGSL so it works in browsers.
 wgsl = []
 # Keep a native SPIR-V path for experimentation; not enabled on the web.
-native-spirv = []
+native-spirv = ["spirv-builder"]
 # Umbrella feature to enable GPU support in dependents (zeldhash-miner-wasm).
 gpu = ["wgsl"]
 web = ["gpu"]
-
-[build-dependencies]
-spirv-builder = "0.9"
-zeldhash-miner-kernel = { workspace = true }
 

@@ -1,9 +1,9 @@
-use alloc::{string::String, vec, vec::Vec};
+use alloc::{format, string::String, vec, vec::Vec};
 
 use thiserror::Error;
 
 use crate::{
-    address::{address_to_script_pubkey, parse_address_for_network, Network},
+    address::{address_to_script_pubkey, parse_address_for_network, AddressType, Network},
     cbor::{cbor_nonce_byte_length, encode_cbor_array_header, encode_cbor_uint},
     error::ZeldError,
     fees::{calculate_change, calculate_fee, calculate_vsize, FeeError},
@@ -16,7 +16,14 @@ use crate::{
     },
 };
 
-const DUST_LIMIT: u64 = 546;
+fn dust_limit_for_address(address_type: AddressType) -> u64 {
+    match address_type {
+        // Bech32 P2WPKH (bc1q... / tb1q...)
+        AddressType::P2WPKH => 310,
+        // Taproot P2TR (bc1p... / tb1p...)
+        AddressType::P2TR => 330,
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OutputRequest {
@@ -99,7 +106,7 @@ fn validate_fee_rate(sats_per_vbyte: u64) -> MinerResult<()> {
 fn collect_outputs(
     outputs: &[OutputRequest],
     network: Network,
-) -> MinerResult<(Vec<TxOutput>, Vec<u8>)> {
+) -> MinerResult<(Vec<TxOutput>, Vec<u8>, AddressType)> {
     if outputs.is_empty() {
         return Err(MinerError::invalid("at least one output is required"));
     }
@@ -114,17 +121,20 @@ fn collect_outputs(
 
     let mut user_outputs = Vec::new();
     let mut change_spk: Option<Vec<u8>> = None;
+    let mut change_address_type: Option<AddressType> = None;
 
     for (idx, output) in outputs.iter().enumerate() {
         let parsed = parse_address_for_network(&output.address, Some(network))
             .map_err(|err| MinerError::invalid(format!("outputs[{idx}] address: {err}")))?;
         let spk = address_to_script_pubkey(&parsed);
+        let dust_limit = dust_limit_for_address(parsed.address_type);
 
         if output.change {
             if change_spk.is_some() {
                 return Err(MinerError::MultipleChangeOutputs);
             }
             change_spk = Some(spk);
+            change_address_type = Some(parsed.address_type);
             continue;
         }
 
@@ -133,9 +143,9 @@ fn collect_outputs(
                 "outputs[{idx}] amount is required for non-change outputs"
             ))
         })?;
-        if amount < DUST_LIMIT {
+        if amount < dust_limit {
             return Err(MinerError::invalid(format!(
-                "outputs[{idx}] amount must be at least {DUST_LIMIT} sats"
+                "outputs[{idx}] amount must be at least {dust_limit} sats"
             )));
         }
 
@@ -146,7 +156,10 @@ fn collect_outputs(
     }
 
     let change_spk = change_spk.ok_or(MinerError::MissingChangeOutput)?;
-    Ok((user_outputs, change_spk))
+    let change_address_type =
+        change_address_type.ok_or_else(|| MinerError::invalid("missing change output"))?;
+
+    Ok((user_outputs, change_spk, change_address_type))
 }
 
 fn validate_cbor_nonce_len(len: usize) -> MinerResult<()> {
@@ -188,7 +201,8 @@ pub fn plan_transaction(
 ) -> MinerResult<TransactionPlan> {
     validate_fee_rate(sats_per_vbyte)?;
 
-    let (user_outputs, change_spk) = collect_outputs(&outputs, network)?;
+    let (user_outputs, change_spk, change_address_type) = collect_outputs(&outputs, network)?;
+    let change_dust_limit = dust_limit_for_address(change_address_type);
     if let Some(dist) = distribution {
         let outputs_len = user_outputs.len() + 1; // include change output
         if dist.len() != outputs_len {
@@ -221,10 +235,12 @@ pub fn plan_transaction(
 
     let vsize = calculate_vsize(&inputs, &outputs_for_fee, op_return_size);
     let fee = calculate_fee(vsize, sats_per_vbyte);
-    let change_amount =
-        calculate_change(total_input, outputs_sum, fee).map_err(|err| match err {
+    let change_amount = calculate_change(total_input, outputs_sum, fee, change_dust_limit)
+        .map_err(|err| match err {
             FeeError::InsufficientFunds => MinerError::invalid("insufficient funds for outputs"),
-            FeeError::DustOutput => MinerError::invalid("change would be dust"),
+            FeeError::DustOutput => MinerError::invalid(format!(
+                "change would be dust (requires at least {change_dust_limit} sats)"
+            )),
         })?;
 
     let change_output = TxOutput {
@@ -591,6 +607,11 @@ mod tests {
         ]
     }
 
+    fn dust_limit_for_addr(addr: &str, network: Network) -> u64 {
+        let parsed = parse_address_for_network(addr, Some(network)).expect("address must parse");
+        super::dust_limit_for_address(parsed.address_type)
+    }
+
     #[test]
     fn plan_transaction_computes_fees_change_and_op_return() {
         let network = Network::Mainnet;
@@ -626,13 +647,14 @@ mod tests {
         let vsize = calculate_vsize(&inputs, &outputs_for_fee, op_return.len());
         let fee = calculate_fee(vsize, 2);
         let expected_change = inputs[0].amount - outputs_for_fee[0].amount - fee;
+        let change_dust_limit = dust_limit_for_addr(&change_addr, network);
 
         assert_eq!(plan.user_outputs.len(), 1);
         assert_eq!(plan.user_outputs[0].script_pubkey, user_spk);
         assert_eq!(plan.change_output.script_pubkey, change_spk);
         assert_eq!(plan.change_output.amount, expected_change);
         assert!(
-            plan.change_output.amount >= 546,
+            plan.change_output.amount >= change_dust_limit,
             "change must remain above the dust limit"
         );
         assert_eq!(plan.op_return_size, op_return.len());
@@ -663,7 +685,8 @@ mod tests {
         let vsize = calculate_vsize(&inputs, &outputs_for_fee, op_return.len());
         let total_input: u64 = inputs.iter().map(|i| i.amount).sum();
         let outputs_sum = outputs_for_fee[0].amount;
-        let max_fee_before_dust = total_input - outputs_sum - 546;
+        let change_dust_limit = dust_limit_for_addr(&change_addr, network);
+        let max_fee_before_dust = total_input - outputs_sum - change_dust_limit;
         let sats_per_vbyte = (max_fee_before_dust / vsize as u64) + 1;
 
         let err = plan_transaction(inputs, outputs, network, sats_per_vbyte, &op_return, None)

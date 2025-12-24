@@ -10,5 +10,7 @@ run() {
 run cargo fmt --all -- --check
 run cargo clippy --all-targets --all-features -- -D warnings
 run cargo test --all
-cd facades/typescript/ && npm run test -- --run && cd ../../
+npm run typecheck --prefix facades/typescript
+npm test --prefix facades/typescript -- --run
 sh scripts/build-all.sh
+sh scripts/build-wasm.sh

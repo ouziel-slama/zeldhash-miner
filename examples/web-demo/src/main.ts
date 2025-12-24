@@ -7,14 +7,14 @@ import {
   ZeldMiner,
   ZeldMinerError,
   ZeldMinerErrorCode,
-} from "zeldminer";
+} from "zeldhash-miner";
 import type {
   MineResult,
   Network,
   ProgressStats,
   TxInput,
   TxOutput,
-} from "zeldminer";
+} from "zeldhash-miner";
 
 type UtxoRow = {
   id: string;
@@ -37,7 +37,13 @@ type StatusTone = "ok" | "warn" | "error";
 const TXID_REGEX = /^[0-9a-fA-F]{64}$/;
 const HEX_REGEX = /^[0-9a-fA-F]+$/;
 const NON_NEG_INTEGER_REGEX = /^\d+$/;
-const DUST_LIMIT = 546;
+
+const dustLimitForAddress = (address: string): number => {
+  const lower = address.toLowerCase();
+  if (lower.startsWith("bc1p") || lower.startsWith("tb1p") || lower.startsWith("bcrt1p")) return 330;
+  if (lower.startsWith("bc1q") || lower.startsWith("tb1q") || lower.startsWith("bcrt1q")) return 310;
+  return 546; // conservative fallback for unexpected address formats
+};
 
 // Start inside the 4-byte nonce range so even long demo runs (tens of millions
 // of attempts at higher targets) never cross a byte-length boundary. Crossing a
@@ -486,9 +492,10 @@ const parseOutputs = (): TxOutput[] => {
     const parsedAmount = Number(amountRaw);
     const amountNum =
       amountRaw === "" ? undefined : Number.isFinite(parsedAmount) ? parsedAmount : undefined;
+    const dustLimit = dustLimitForAddress(row.address.trim());
 
-    if (!row.change && (amountNum === undefined || amountNum < DUST_LIMIT)) {
-      throw new Error(`Output #${idx + 1} must be at least ${DUST_LIMIT} sats.`);
+    if (!row.change && (amountNum === undefined || amountNum < dustLimit)) {
+      throw new Error(`Output #${idx + 1} must be at least ${dustLimit} sats.`);
     }
     if (row.change && amountNum !== undefined && amountNum < 0) {
       throw new Error(`Change output #${idx + 1} cannot be negative.`);
