@@ -21,7 +21,12 @@ DEFAULT_CRATE_DIRS=(
   "facades/rust"
 )
 
-readarray -t CRATE_DIRS_ARRAY <<<"${CRATE_DIRS:-${DEFAULT_CRATE_DIRS[*]}}"
+if [[ -n "${CRATE_DIRS:-}" ]]; then
+  # Split space-separated string into array
+  read -ra CRATE_DIRS_ARRAY <<<"${CRATE_DIRS}"
+else
+  CRATE_DIRS_ARRAY=("${DEFAULT_CRATE_DIRS[@]}")
+fi
 
 ALLOW_DIRTY="${ALLOW_DIRTY:-0}"
 SKIP_TESTS="${SKIP_TESTS:-0}"
