@@ -1,5 +1,13 @@
 # Zeldhash Miner
 
+[![Tests](https://github.com/ouziel-slama/zeldhash-miner/actions/workflows/tests.yml/badge.svg)](https://github.com/ouziel-slama/zeldhash-miner/actions/workflows/tests.yml)
+[![Clippy](https://github.com/ouziel-slama/zeldhash-miner/actions/workflows/clippy.yml/badge.svg)](https://github.com/ouziel-slama/zeldhash-miner/actions/workflows/clippy.yml)
+[![Fmt](https://github.com/ouziel-slama/zeldhash-miner/actions/workflows/fmt.yml/badge.svg)](https://github.com/ouziel-slama/zeldhash-miner/actions/workflows/fmt.yml)
+[![codecov](https://codecov.io/gh/ouziel-slama/zeldhash-miner/graph/badge.svg?token=EBST68VDXC)](https://codecov.io/gh/ouziel-slama/zeldhash-miner)
+[![Crates.io](https://img.shields.io/crates/v/zeldhash-miner.svg)](https://crates.io/crates/zeldhash-miner)
+[![npm](https://img.shields.io/npm/v/zeldhash-miner.svg)](https://www.npmjs.com/package/zeldhash-miner)
+
+
 **Bitcoin vanity transaction miner** that finds transaction IDs (txids) with leading zero hex digits. The miner builds unsigned PSBTs containing a nonce in an `OP_RETURN` output and iterates until the resulting txid meets the target difficulty.
 
 ## Features
