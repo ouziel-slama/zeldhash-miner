@@ -49,6 +49,52 @@ jobs:
           files: coverage.lcov
           flags: rust
           fail_ci_if_error: true
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN }}
 
+  ts-tests:
+    runs-on: ubuntu-latest
+    environment: default
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Rust (for wasm-pack build)
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: 1.82.0
+          profile: minimal
+
+      - name: Install wasm32 target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack
+
+      - name: Build WASM artifacts
+        run: ./scripts/build-wasm.sh
+
+      - name: Install dependencies
+        run: npm ci --prefix facades/typescript
+
+      - name: Install coverage provider (temp)
+        run: npm install --no-save @vitest/coverage-v8@1.6.0 --prefix facades/typescript
+
+      - name: Typecheck
+        run: npm run typecheck --prefix facades/typescript
+
+      - name: Run tests
+        run: npm test --prefix facades/typescript -- --coverage --coverage.reporter=lcov --coverage.reporter=text
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: facades/typescript/coverage/lcov.info
+          flags: typescript
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
