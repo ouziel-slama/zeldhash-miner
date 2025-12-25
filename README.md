@@ -32,7 +32,6 @@ Both SDKs expose the same core functionality:
 zeldhash-miner/
 ├── crates/                    # Core Rust building blocks
 │   ├── core/                  # Domain logic (no_std, pure algorithms)
-│   ├── kernel/                # SPIR-V compute kernel (rust-gpu)
 │   ├── gpu/                   # WebGPU backend
 │   ├── wasm/                  # wasm-bindgen bindings
 │   └── python-core/           # Placeholder for pyo3 wheel

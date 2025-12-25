@@ -46,7 +46,7 @@ The miner constructs a Bitcoin transaction with an `OP_RETURN` output containing
 ├─────────────────────────────────────────────────────────────┤
 │              zeldhash-miner-wasm (WASM bindings)            │
 ├─────────────────────────────────────────────────────────────┤
-│   zeldhash-miner-gpu   │   zeldhash-miner-kernel (SPIR-V)   │
+│   zeldhash-miner-gpu   │   —                                │
 ├─────────────────────────────────────────────────────────────┤
 │                   zeldhash-miner-core                       │
 │              (no_std, pure algorithms & types)              │
@@ -71,7 +71,7 @@ zeldhash-miner/
 ├── crates/
 │   ├── core/                  # Core algorithms (no_std)
 │   ├── gpu/                   # WebGPU backend
-│   ├── kernel/                # SPIR-V compute kernel
+│   ├── (kernel removed)       # legacy GPU compute kernel (removed)
 │   ├── wasm/                  # WASM bindings
 │   └── python-core/           # Placeholder for pyo3 wheel
 ├── facades/
@@ -182,10 +182,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 | DiscreteGpu    | 1,000,000     |
 | IntegratedGpu  | 100,000       |
 | Cpu            | 25,000        |
-
-### zeldhash-miner-kernel
-
-Rust crate compiled to SPIR-V via `rust-gpu` for native GPU deployment. Mirrors the WGSL shader.
 
 ### zeldhash-miner-wasm
 
@@ -463,8 +459,8 @@ enum ZeldError {
 
 ```toml
 # rust-toolchain.toml
-channel = "nightly-2023-05-27"
-components = ["rust-src", "rustc-dev", "llvm-tools-preview"]
+channel = "1.82.0"
+components = ["rust-src", "rustc-dev", "llvm-tools-preview", "rustfmt", "clippy"]
 ```
 
 ### Feature Matrix
@@ -472,7 +468,7 @@ components = ["rust-src", "rustc-dev", "llvm-tools-preview"]
 | Crate              | Default           | Optional       |
 |--------------------|-------------------|----------------|
 | zeldhash-miner     | cpu, gpu, rayon   | serde          |
-| zeldhash-miner-gpu | gpu (wgsl)        | native-spirv   |
+| zeldhash-miner-gpu | gpu (wgsl)        | —                               |
 | zeldhash-miner-wasm| cpu, gpu          | —              |
 
 ### Commands

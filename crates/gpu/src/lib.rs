@@ -10,13 +10,11 @@
 //! JavaScript bindings and future optimizations can reuse them unchanged.
 
 use std::{
+    borrow::Cow,
     num::NonZeroU64,
     sync::{Arc, Mutex, MutexGuard},
     time::Instant,
 };
-
-#[cfg(not(all(feature = "native-spirv", not(target_arch = "wasm32"))))]
-use std::borrow::Cow;
 
 use futures::channel::oneshot;
 
@@ -29,9 +27,6 @@ use zeldhash_miner_core::encode_nonce;
 const WORKGROUP_SIZE: u32 = 256;
 const MAX_RESULTS: usize = 8;
 
-#[cfg(feature = "native-spirv")]
-const KERNEL_SPV: &[u8] = include_bytes!(env!("ZELD_KERNEL_SPV"));
-#[cfg(not(all(feature = "native-spirv", not(target_arch = "wasm32"))))]
 const SHADER_WGSL: &str = include_str!("shader.wgsl");
 
 /// Minimal adapter info exposed to callers (e.g., WASM bindings).
@@ -117,18 +112,7 @@ impl GpuContext {
             .ok_or_else(|| GpuError::Unavailable("no suitable adapter found".into()))?;
 
         let adapter_info = adapter.get_info();
-        let adapter_features = adapter.features();
-        let require_spirv = cfg!(feature = "native-spirv") && !cfg!(target_arch = "wasm32");
-        let required_features = if require_spirv {
-            wgpu::Features::SPIRV_SHADER_PASSTHROUGH
-        } else {
-            wgpu::Features::empty()
-        };
-        if require_spirv && !adapter_features.contains(required_features) {
-            return Err(GpuError::Unavailable(
-                "adapter does not support SPIR-V shader passthrough".into(),
-            ));
-        }
+        let required_features = wgpu::Features::empty();
 
         // On the web, some implementations reject `requestDevice` if optional limits
         // (like `maxInterStageShaderComponents`) are provided. Use the portable
@@ -474,19 +458,6 @@ fn to_u8_bytes(words: &[u32; 8]) -> [u8; 32] {
 }
 
 #[cfg_attr(test, allow(dead_code))]
-#[cfg(all(feature = "native-spirv", not(target_arch = "wasm32")))]
-fn create_shader_module(ctx: &GpuContext) -> wgpu::ShaderModule {
-    unsafe {
-        ctx.device
-            .create_shader_module_spirv(&wgpu::ShaderModuleDescriptorSpirV {
-                label: Some("zeldhash-miner-gpu-miner-shader-spirv"),
-                source: wgpu::util::make_spirv_raw(KERNEL_SPV),
-            })
-    }
-}
-
-#[cfg_attr(test, allow(dead_code))]
-#[cfg(not(all(feature = "native-spirv", not(target_arch = "wasm32"))))]
 fn create_shader_module(ctx: &GpuContext) -> wgpu::ShaderModule {
     ctx.device
         .create_shader_module(wgpu::ShaderModuleDescriptor {

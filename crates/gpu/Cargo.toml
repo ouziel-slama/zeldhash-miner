@@ -12,23 +12,16 @@ categories = ["cryptography", "cryptography::cryptocurrencies"]
 
 [dependencies]
 zeldhash-miner-core = { workspace = true }
-wgpu = { version = "0.19", features = ["webgpu"] }
+wgpu = { version = "0.19", default-features = false, features = ["dx12", "metal", "webgpu", "wgsl"] }
 pollster = "0.3"
 thiserror = "1"
 bytemuck = { version = "1.14", features = ["derive"] }
 futures = "0.3"
 
-# Build dependencies are only needed for native-spirv experimental path.
-# The kernel crate is resolved via spirv-builder from ../kernel path in build.rs.
-[build-dependencies]
-spirv-builder = { version = "0.9", optional = true }
-
 [features]
 default = ["gpu"]
 # Primary WebGPU path uses WGSL so it works in browsers.
 wgsl = []
-# Keep a native SPIR-V path for experimentation; not enabled on the web.
-native-spirv = ["spirv-builder"]
 # Umbrella feature to enable GPU support in dependents (zeldhash-miner-wasm).
 gpu = ["wgsl"]
 web = ["gpu"]

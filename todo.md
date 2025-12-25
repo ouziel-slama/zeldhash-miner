@@ -14,7 +14,6 @@ zeldhash-miner/
   rust-toolchain.toml
   crates/                      # core Rust building blocks
     core/                      # domain logic (PSBT, hash, fees, nonce, builder…)
-    kernel/                    # low-level CPU primitives
     gpu/                       # GPU acceleration
     wasm/                      # wasm-bindgen target; depends on core/gpu
     python-core/               # pyo3 crate producing the wheel; depends on core/gpu
@@ -53,7 +52,7 @@ zeldhash-miner/
 
 Analysis (what changes vs current)
 ----------------------------------
-- Core Rust stays in `crates/` (core/kernel/gpu/wasm/python-core). No public API logic lives at workspace root.
+- Core Rust stays in `crates/` (core/gpu/wasm/python-core). No public API logic lives at workspace root.
 - All public-facing SDKs are co-located in `facades/` (rust, ts, python) to make “the three APIs” discoverable together.
 - Wasm artifacts are centralized: built in `crates/wasm`, then copied to `facades/ts/wasm/` and optionally to `examples/web-demo/public/wasm/`. Avoid keeping generated files under multiple folders.
 - Frontend demo moves to `examples/web-demo/` to separate product code from example UX.
@@ -63,7 +62,7 @@ Action Plan (repo to target layout)
 -----------------------------------
 - Workspace + crates
   - Update `Cargo.toml` workspace members to include `crates/*` and new `facades/rust` crate; keep crate names stable (`zeldhash-miner-*`) to avoid downstream API breaks.
-  - Move/rename crates to match the layout: `crates/zeldhash-miner-core` -> `crates/core`, `crates/zeldhash-miner-kernel` -> `crates/kernel`, `crates/zeldhash-miner-gpu` -> `crates/gpu`, `crates/zeldhash-miner-wasm` -> `crates/wasm`. Adjust path dependencies accordingly without changing published crate names unless necessary.
+  - Move/rename crates to match the layout: `crates/zeldhash-miner-core` -> `crates/core`, `crates/zeldhash-miner-gpu` -> `crates/gpu`, `crates/zeldhash-miner-wasm` -> `crates/wasm`. Adjust path dependencies accordingly without changing published crate names unless necessary.
   - Create `facades/rust/` and move the current orchestrator (`src/lib.rs`, package metadata) there; leave the workspace root as a pure workspace manifest.
   - Add a placeholder `crates/python-core/` (pyo3 target) and wire it into the workspace when ready; keep API surface aligned with core/gpu.
 

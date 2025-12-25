@@ -23,8 +23,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libx11-dev libasound2-dev libudev-dev pkg-config libxkbcommon-dev libwayland-dev
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@v1
         with:
+          toolchain: 1.82.0
           components: llvm-tools-preview
           profile: minimal
       - uses: Swatinem/rust-cache@v2
@@ -41,7 +42,7 @@ jobs:
       - name: Build wasm bindings
         run: wasm-pack build crates/wasm --target web
       - name: Run tests with coverage (CPU/GPU host targets)
-        run: cargo llvm-cov --workspace --all-features --exclude zeldhash-miner-wasm --lcov --output-path coverage.lcov
+        run: cargo llvm-cov --workspace --features gpu,rayon,serde --exclude zeldhash-miner-wasm --lcov --output-path coverage.lcov
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:

@@ -23,7 +23,7 @@ use zeldhash_miner_gpu::{
 
 #[cfg(feature = "gpu")]
 thread_local! {
-    static GPU_CTX: RefCell<Option<GpuContext>> = RefCell::new(None);
+    static GPU_CTX: RefCell<Option<GpuContext>> = const { RefCell::new(None) };
 }
 
 fn network_from_str(network: &str) -> Option<Network> {

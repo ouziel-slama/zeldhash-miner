@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Publish all Rust crates to crates.io in dependency order, waiting for each
 # crate version to become available before moving to the next. Defaults to the
-# workspace chain: kernel -> core -> gpu -> wasm -> facade.
+# workspace chain: core -> gpu -> wasm -> facade.
 #
 # Environment toggles:
 #   CRATE_DIRS   - space-separated list of crate directories (relative to repo root)
@@ -14,9 +14,6 @@ set -euo pipefail
 
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# Note: crates/kernel is excluded because it's a rust-gpu crate that requires
-# a special nightly toolchain and can't be published to crates.io in standard way.
-# It's used at build-time only and has publish = false.
 DEFAULT_CRATE_DIRS=(
   "crates/core"
   "crates/gpu"

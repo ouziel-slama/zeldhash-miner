@@ -1,5 +1,5 @@
 [toolchain]
-channel = "nightly-2023-05-27"
+channel = "1.82.0"
 components = ["rust-src", "rustc-dev", "llvm-tools-preview", "rustfmt", "clippy"]
 profile = "minimal"
 
