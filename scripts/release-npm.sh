@@ -28,12 +28,11 @@ read_name_version() {
     echo "error: package.json not found at ${manifest}" >&2
     exit 1
   fi
-  node - "$manifest" <<'NODE'
-const fs = require("fs");
-const path = process.argv[1];
-const pkg = JSON.parse(fs.readFileSync(path, "utf8"));
-console.log(`${pkg.name} ${pkg.version}`);
-NODE
+  node -e "
+const fs = require('fs');
+const pkg = JSON.parse(fs.readFileSync('${manifest}', 'utf8'));
+console.log(pkg.name + ' ' + pkg.version);
+"
 }
 
 if [[ ! -d "${PKG_PATH}" ]]; then
