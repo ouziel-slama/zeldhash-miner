@@ -58,14 +58,21 @@ print(f"{pkg.get('name')} {pkg.get('version')}")
 PY
 }
 
+crate_exists() {
+  local crate="$1"
+  local version="$2"
+  local url="https://crates.io/api/v1/crates/${crate}/${version}"
+  # crates.io API requires a User-Agent header
+  curl -sSf -A "zeldhash-release-script/1.0" -o /dev/null "${url}" 2>/dev/null
+}
+
 wait_for_crate() {
   local crate="$1"
   local version="$2"
   local attempt=1
-  local url="https://crates.io/api/v1/crates/${crate}/${version}"
 
   while (( attempt <= MAX_WAIT_ATTEMPTS )); do
-    if curl -sSf -o /dev/null "${url}"; then
+    if crate_exists "${crate}" "${version}"; then
       log "Crate ${crate} v${version} is available on crates.io"
       return 0
     fi
@@ -85,6 +92,12 @@ log "Running cargo fmt --check"
 for dir in "${CRATE_DIRS_ARRAY[@]}"; do
   CRATE_PATH="${ROOT_DIR}/${dir}"
   read -r CRATE_NAME CRATE_VERSION < <(read_name_version "${CRATE_PATH}")
+
+  # Skip if already published
+  if crate_exists "${CRATE_NAME}" "${CRATE_VERSION}"; then
+    log "Skipping ${CRATE_NAME} v${CRATE_VERSION} (already published)"
+    continue
+  fi
 
   log "Publishing ${CRATE_NAME} v${CRATE_VERSION} from ${CRATE_PATH}"
 
