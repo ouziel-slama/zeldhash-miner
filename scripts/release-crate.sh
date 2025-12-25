@@ -48,10 +48,11 @@ read_name_version() {
     echo "error: Cargo.toml not found at ${manifest}" >&2
     exit 1
   fi
-  python - "$manifest" <<'PY'
+  python3 - "$manifest" <<'PY'
 import sys, tomllib
 path = sys.argv[1]
-data = tomllib.loads(open(path, "rb").read())
+with open(path, "rb") as f:
+    data = tomllib.load(f)
 pkg = data.get("package") or {}
 print(f"{pkg.get('name')} {pkg.get('version')}")
 PY
