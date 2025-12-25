@@ -74,7 +74,7 @@ Action Plan (repo to target layout)
 
 - WASM build flow
   - Update `scripts/build-wasm.sh` to use `crates/wasm` as the source and to sync outputs into `facades/typescript/wasm/` and `examples/web-demo/public/wasm/`.
-  - Keep the GPU toggle (`WASM_GPU`) and the type guard that checks for `mine_batch_gpu` in the bindings; ensure wasm-opt still runs if available.
+  - Keep the type guard that checks for `mine_batch_gpu` in the bindings; ensure wasm-opt still runs if available.
   - Ensure `pkg/` is not committed; keep one canonical copy in `facades/typescript/wasm`.
 
 - Demo / examples

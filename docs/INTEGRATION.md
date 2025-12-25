@@ -234,9 +234,7 @@ The WASM files are not being served. Check that:
 
 ### Error: "mine_batch_gpu is unavailable"
 
-The WASM was built without GPU support. Either:
-- Rebuild with `WASM_GPU=1 ./scripts/build-wasm.sh`
-- Or uncheck "Use GPU" in your application
+GPU bindings are missing. Rebuild the WASM bundle with `./scripts/build-wasm.sh` to ensure GPU features are compiled, or reinstall the npm package to get the GPU-enabled artifacts.
 
 ### Error: "outputs[0].amount must be at least 546 sats"
 

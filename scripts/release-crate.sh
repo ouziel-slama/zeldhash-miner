@@ -75,6 +75,10 @@ wait_for_crate() {
   return 1
 }
 
+# Ensure formatting matches repository expectations before publishing.
+log "Running cargo fmt --check"
+(cd "${ROOT_DIR}" && cargo fmt --all -- --check)
+
 for dir in "${CRATE_DIRS_ARRAY[@]}"; do
   CRATE_PATH="${ROOT_DIR}/${dir}"
   read -r CRATE_NAME CRATE_VERSION < <(read_name_version "${CRATE_PATH}")

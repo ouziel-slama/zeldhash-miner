@@ -6,12 +6,11 @@ This repository ships three artifacts: the Rust crate (`zeldhash-miner`), the np
 
 - Update versions where appropriate (crate `facades/rust/Cargo.toml`, npm `facades/typescript/package.json`).
 - Verify the workspace is clean and CI-quality checks pass:
-  - `cargo fmt --all -- --check`
-  - `cargo test -p zeldhash-miner-core`
-  - `cargo test -p zeldhash-miner` (add `--no-default-features --features "cpu serde"` when you need CPU-only coverage)
-  - `wasm-pack build crates/wasm --target web` or `./scripts/build-wasm.sh` to refresh `facades/typescript/wasm/` and `examples/web-demo/public/wasm/`
-    - GPU on by default (`WASM_GPU=1`); set `WASM_GPU=0` (or `false`) to force CPU-only when rust-gpu toolchains are unavailable.
-  - `npm test --prefix facades/typescript`
+- `cargo fmt --all -- --check`
+- `cargo test -p zeldhash-miner-core`
+- `cargo test -p zeldhash-miner` (add `--no-default-features --features "cpu serde"` when you need CPU-only coverage)
+- `wasm-pack build crates/wasm --target web` or `./scripts/build-wasm.sh` to refresh `facades/typescript/wasm/` and `examples/web-demo/public/wasm/` (GPU-enabled by default)
+- `npm test --prefix facades/typescript`
   - `npm run build --prefix examples/web-demo` (smoke test the demo)
 - Make sure `pkg/` outputs remain untracked; `scripts/build-wasm.sh` copies the canonical artifacts into `facades/typescript/wasm/`.
 
@@ -28,13 +27,14 @@ This repository ships three artifacts: the Rust crate (`zeldhash-miner`), the np
 ## Releasing the npm package (`zeldhash-miner`)
 
 1. Bump the version in `facades/typescript/package.json` and `package-lock.json`.
-2. Regenerate WASM artifacts:
+2. Regenerate WASM artifacts (optional: `release-npm.sh` also rebuilds them):
    ```bash
-   ./scripts/build-wasm.sh   # copies outputs into facades/typescript/wasm/ and the demo
-   # GPU on by default; use WASM_GPU=0 or WASM_GPU=false for CPU-only
+./scripts/build-wasm.sh   # copies outputs into facades/typescript/wasm/ and the demo (GPU-enabled)
    ```
 3. Build and publish the package:
    ```bash
+   ./scripts/release-npm.sh                  # runs checks, builds, and publishes
+   # or manually:
    npm ci --prefix facades/typescript
    npm run build --prefix facades/typescript
    (cd facades/typescript && npm publish --access public)

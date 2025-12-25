@@ -484,9 +484,6 @@ components = ["rust-src", "rustc-dev", "llvm-tools-preview"]
 # WASM only
 ./scripts/build-wasm.sh
 
-# CPU-only WASM (stable toolchain)
-WASM_GPU=0 ./scripts/build-wasm.sh
-
 # Tests
 cargo test -p zeldhash-miner-core
 cargo test -p zeldhash-miner
