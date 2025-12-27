@@ -95,8 +95,8 @@ describe("PSBT parsing", () => {
     expect(opReturn?.script?.slice(2).toString("hex")).toBe(MAINNET_REAL_CASE.opReturnHex);
 
     const nonceBytes = opReturn?.script?.slice(2) ?? Buffer.alloc(0);
-    const nonceLe = nonceBytes.readUIntLE(0, nonceBytes.length);
-    expect(BigInt(nonceLe)).toBe(MAINNET_REAL_CASE.nonce);
+    const nonceBe = nonceBytes.readUIntBE(0, nonceBytes.length);
+    expect(BigInt(nonceBe)).toBe(MAINNET_REAL_CASE.nonce);
 
     const txid = (psbt as unknown as { __CACHE?: { __TX?: { getId?: () => string } } })
       .__CACHE?.__TX?.getId?.();

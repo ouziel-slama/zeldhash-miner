@@ -907,8 +907,8 @@ mod tests {
             amount: input.amount - user_output.amount, // ignore fees for this focused test
         };
 
-        let outputs_before = vec![user_output.clone()];
-        let outputs_after = vec![change_output.clone()];
+        let outputs_before = vec![user_output.clone(), change_output.clone()];
+        let outputs_after = Vec::new();
 
         // Build prefix/suffix around the OP_RETURN placeholder of the known nonce length.
         let (prefix, suffix) =
@@ -929,11 +929,11 @@ mod tests {
         // Construct a PSBT using the same outputs (including OP_RETURN and change) and verify txid.
         let psbt_outputs = vec![
             user_output,
+            change_output,
             TxOutput {
                 script_pubkey: op_return_script,
                 amount: 0,
             },
-            change_output,
         ];
         let psbt_bytes = create_psbt(&[input], &psbt_outputs).expect("psbt builds");
         let psbt = Psbt::deserialize(&psbt_bytes).expect("psbt parses");
@@ -945,7 +945,7 @@ mod tests {
                 .to_byte_array(),
             txid
         );
-        let op_return_spk = psbt.unsigned_tx.output[1].script_pubkey.as_bytes();
+        let op_return_spk = psbt.unsigned_tx.output[2].script_pubkey.as_bytes();
         assert_eq!(op_return_spk, &[0x6a, 0x01, 0x00]);
     }
 

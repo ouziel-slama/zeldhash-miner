@@ -1,4 +1,4 @@
-use alloc::{format, string::String, vec, vec::Vec};
+use alloc::{format, string::String, vec::Vec};
 
 use thiserror::Error;
 
@@ -35,8 +35,10 @@ pub struct OutputRequest {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TransactionPlan {
     pub inputs: Vec<TxInput>,
-    pub user_outputs: Vec<TxOutput>,
-    pub change_output: TxOutput,
+    /// All non-OP_RETURN outputs in the exact order provided by the caller.
+    pub outputs: Vec<TxOutput>,
+    /// Index of the single change output within `outputs`.
+    pub change_index: usize,
     pub op_return_script: Vec<u8>,
     pub op_return_size: usize,
     pub distribution: Option<Vec<u64>>,
@@ -106,7 +108,7 @@ fn validate_fee_rate(sats_per_vbyte: u64) -> MinerResult<()> {
 fn collect_outputs(
     outputs: &[OutputRequest],
     network: Network,
-) -> MinerResult<(Vec<TxOutput>, Vec<u8>, AddressType)> {
+) -> MinerResult<(Vec<TxOutput>, usize, AddressType)> {
     if outputs.is_empty() {
         return Err(MinerError::invalid("at least one output is required"));
     }
@@ -119,9 +121,9 @@ fn collect_outputs(
         return Err(MinerError::MultipleChangeOutputs);
     }
 
-    let mut user_outputs = Vec::new();
-    let mut change_spk: Option<Vec<u8>> = None;
+    let mut ordered_outputs = Vec::with_capacity(outputs.len());
     let mut change_address_type: Option<AddressType> = None;
+    let mut change_index: Option<usize> = None;
 
     for (idx, output) in outputs.iter().enumerate() {
         let parsed = parse_address_for_network(&output.address, Some(network))
@@ -130,11 +132,16 @@ fn collect_outputs(
         let dust_limit = dust_limit_for_address(parsed.address_type);
 
         if output.change {
-            if change_spk.is_some() {
+            if change_index.is_some() {
                 return Err(MinerError::MultipleChangeOutputs);
             }
-            change_spk = Some(spk);
             change_address_type = Some(parsed.address_type);
+            change_index = Some(idx);
+            // Amount will be filled after fee calculation; keep placeholder.
+            ordered_outputs.push(TxOutput {
+                script_pubkey: spk,
+                amount: 0,
+            });
             continue;
         }
 
@@ -149,17 +156,17 @@ fn collect_outputs(
             )));
         }
 
-        user_outputs.push(TxOutput {
+        ordered_outputs.push(TxOutput {
             script_pubkey: spk,
             amount,
         });
     }
 
-    let change_spk = change_spk.ok_or(MinerError::MissingChangeOutput)?;
     let change_address_type =
         change_address_type.ok_or_else(|| MinerError::invalid("missing change output"))?;
+    let change_index = change_index.ok_or(MinerError::MissingChangeOutput)?;
 
-    Ok((user_outputs, change_spk, change_address_type))
+    Ok((ordered_outputs, change_index, change_address_type))
 }
 
 fn validate_cbor_nonce_len(len: usize) -> MinerResult<()> {
@@ -201,10 +208,11 @@ pub fn plan_transaction(
 ) -> MinerResult<TransactionPlan> {
     validate_fee_rate(sats_per_vbyte)?;
 
-    let (user_outputs, change_spk, change_address_type) = collect_outputs(&outputs, network)?;
+    let (mut ordered_outputs, change_index, change_address_type) =
+        collect_outputs(&outputs, network)?;
     let change_dust_limit = dust_limit_for_address(change_address_type);
     if let Some(dist) = distribution {
-        let outputs_len = user_outputs.len() + 1; // include change output
+        let outputs_len = ordered_outputs.len();
         if dist.len() != outputs_len {
             return Err(MinerError::invalid(format!(
                 "distribution length ({}) must match outputs ({})",
@@ -215,14 +223,14 @@ pub fn plan_transaction(
     }
 
     let total_input: u64 = inputs.iter().map(|i| i.amount).sum();
-    let outputs_sum: u64 = user_outputs.iter().map(|o| o.amount).sum();
+    let outputs_sum: u64 = ordered_outputs
+        .iter()
+        .enumerate()
+        .filter_map(|(idx, o)| (idx != change_index).then_some(o.amount))
+        .sum();
 
     // Include change output (amount placeholder) for accurate fee estimation.
-    let mut outputs_for_fee = user_outputs.clone();
-    outputs_for_fee.push(TxOutput {
-        script_pubkey: change_spk.clone(),
-        amount: 0,
-    });
+    let outputs_for_fee = ordered_outputs.clone();
 
     let (op_return_script, op_return_size, distribution_owned) = if let Some(dist) = distribution {
         let (payload, payload_len) = build_distribution_payload(dist, op_return_payload)?;
@@ -243,15 +251,14 @@ pub fn plan_transaction(
             )),
         })?;
 
-    let change_output = TxOutput {
-        script_pubkey: change_spk,
-        amount: change_amount,
-    };
+    if let Some(change) = ordered_outputs.get_mut(change_index) {
+        change.amount = change_amount;
+    }
 
     Ok(TransactionPlan {
         inputs,
-        user_outputs,
-        change_output,
+        outputs: ordered_outputs,
+        change_index,
         op_return_script,
         op_return_size,
         distribution: distribution_owned,
@@ -262,8 +269,8 @@ pub fn build_mining_template(
     plan: &TransactionPlan,
     nonce_len: usize,
 ) -> MinerResult<MiningTemplate> {
-    let outputs_before = plan.user_outputs.clone();
-    let outputs_after = vec![plan.change_output.clone()];
+    let outputs_before = plan.outputs.clone();
+    let outputs_after = Vec::new();
 
     let (prefix, suffix) = if let Some(dist) = plan.distribution.as_ref() {
         validate_cbor_nonce_len(nonce_len)?;
@@ -288,12 +295,11 @@ pub fn build_mining_template(
 }
 
 pub fn build_psbt_from_plan(plan: &TransactionPlan) -> MinerResult<(String, [u8; 32])> {
-    let mut outputs = plan.user_outputs.clone();
+    let mut outputs = plan.outputs.clone();
     outputs.push(TxOutput {
         script_pubkey: plan.op_return_script.clone(),
         amount: 0,
     });
-    outputs.push(plan.change_output.clone());
 
     let psbt_bytes = create_psbt(&plan.inputs, &outputs).map_err(MinerError::from)?;
     let psbt_b64 = psbt_to_base64(&psbt_bytes);
@@ -649,12 +655,13 @@ mod tests {
         let expected_change = inputs[0].amount - outputs_for_fee[0].amount - fee;
         let change_dust_limit = dust_limit_for_addr(&change_addr, network);
 
-        assert_eq!(plan.user_outputs.len(), 1);
-        assert_eq!(plan.user_outputs[0].script_pubkey, user_spk);
-        assert_eq!(plan.change_output.script_pubkey, change_spk);
-        assert_eq!(plan.change_output.amount, expected_change);
+        assert_eq!(plan.outputs.len(), 2);
+        assert_eq!(plan.change_index, 1);
+        assert_eq!(plan.outputs[0].script_pubkey, user_spk);
+        assert_eq!(plan.outputs[1].script_pubkey, change_spk);
+        assert_eq!(plan.outputs[1].amount, expected_change);
         assert!(
-            plan.change_output.amount >= change_dust_limit,
+            plan.outputs[1].amount >= change_dust_limit,
             "change must remain above the dust limit"
         );
         assert_eq!(plan.op_return_size, op_return.len());
@@ -835,7 +842,7 @@ mod tests {
             plan.op_return_size,
             zeld_distribution_payload_length_with_nonce(&distribution, cbor_nonce.len())
         );
-        assert_eq!(plan.user_outputs.len() + 1, distribution.len());
+        assert_eq!(plan.outputs.len(), distribution.len());
     }
 
     #[test]
@@ -884,13 +891,70 @@ mod tests {
             zeld_distribution_payload_length_with_nonce(&distribution, cbor_nonce.len());
 
         assert_eq!(plan.distribution.as_deref(), Some(distribution.as_slice()));
-        assert_eq!(plan.user_outputs.len() + 1, distribution.len());
+        assert_eq!(plan.outputs.len(), distribution.len());
         assert_eq!(plan.op_return_size, expected_payload_len);
         assert_eq!(plan.op_return_script[0], 0x6a); // OP_RETURN
         assert!(plan
             .op_return_script
             .windows(ZELD_PREFIX.len())
             .any(|w| w == ZELD_PREFIX));
+    }
+
+    #[test]
+    fn preserves_output_order_and_places_op_return_last() {
+        let network = Network::Mainnet;
+        let (user_addr, change_addr) = sample_addresses(network);
+        let other_addr = segwit_address(0x99, network);
+        let inputs = vec![sample_input(200_000, &change_addr, network)];
+        let outputs = vec![
+            OutputRequest {
+                address: user_addr.clone(),
+                amount: Some(50_000),
+                change: false,
+            },
+            OutputRequest {
+                address: change_addr.clone(),
+                amount: None,
+                change: true,
+            },
+            OutputRequest {
+                address: other_addr.clone(),
+                amount: Some(25_000),
+                change: false,
+            },
+        ];
+        let nonce_bytes = [0xAAu8];
+
+        let plan = plan_transaction(inputs.clone(), outputs, network, 2, &nonce_bytes, None)
+            .expect("plan should keep output order");
+
+        assert_eq!(plan.outputs.len(), 3);
+        assert_eq!(plan.change_index, 1);
+        assert_eq!(
+            plan.outputs[0].script_pubkey,
+            script_pubkey(&user_addr, network)
+        );
+        assert_eq!(
+            plan.outputs[1].script_pubkey,
+            script_pubkey(&change_addr, network)
+        );
+        assert_eq!(
+            plan.outputs[2].script_pubkey,
+            script_pubkey(&other_addr, network)
+        );
+
+        let template = build_mining_template(&plan, nonce_bytes.len()).expect("template builds");
+        let mut rebuilt = template.prefix.clone();
+        rebuilt.extend_from_slice(&nonce_bytes);
+        rebuilt.extend_from_slice(&template.suffix);
+
+        let mut expected_outputs = plan.outputs.clone();
+        expected_outputs.push(TxOutput {
+            script_pubkey: plan.op_return_script.clone(),
+            amount: 0,
+        });
+        let expected_tx = serialize_tx_for_txid(&inputs, &expected_outputs);
+        assert_eq!(rebuilt, expected_tx);
     }
 
     #[test]
@@ -943,12 +1007,11 @@ mod tests {
         rebuilt.extend_from_slice(&cbor_nonce);
         rebuilt.extend_from_slice(&template.suffix);
 
-        let mut full_outputs = plan.user_outputs.clone();
+        let mut full_outputs = plan.outputs.clone();
         full_outputs.push(TxOutput {
             script_pubkey: plan.op_return_script.clone(),
             amount: 0,
         });
-        full_outputs.push(plan.change_output);
 
         let expected_tx = serialize_tx_for_txid(&inputs, &full_outputs);
         assert_eq!(rebuilt, expected_tx);
@@ -1010,12 +1073,11 @@ mod tests {
 
         let expected_op_return =
             create_zeld_distribution_op_return(&distribution, mine_result.nonce);
-        let mut outputs_full = plan.user_outputs.clone();
+        let mut outputs_full = plan.outputs.clone();
         outputs_full.push(TxOutput {
             script_pubkey: expected_op_return.clone(),
             amount: 0,
         });
-        outputs_full.push(plan.change_output);
         let expected_tx = serialize_tx_for_txid(&inputs, &outputs_full);
 
         assert_eq!(mined_tx, expected_tx);

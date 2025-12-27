@@ -19,10 +19,10 @@ export const MAINNET_REAL_CASE = {
     },
   ] as TxOutput[],
   expectedPsbt:
-    "cHNidP8BAGACAAAAATf/KjoGIo8IPJcFnDircGdFEsKvQUm8tUVgrBZhrYEfAAAAAAD9////AgAAAAAAAAAABWoDIER6BBUAAAAAAAAWABTqnSC/uTiyoNd4pdjYvCqv91XDlQAAAAAAAQEfcBcAAAAAAAAWABTqnSC/uTiyoNd4pdjYvCqv91XDlQAAAA==",
-  expectedTxid: "000000dc1c2ae6c5bb67b149645a140e5c0c78c812e2c734feef21eb4abdabe0",
-  // OP_RETURN holds the nonce bytes in little-endian form.
+    "cHNidP8BAGACAAAAATf/KjoGIo8IPJcFnDircGdFEsKvQUm8tUVgrBZhrYEfAAAAAAD9////AgQVAAAAAAAAFgAU6p0gv7k4sqDXeKXY2Lwqr/dVw5UAAAAAAAAAAAVqA3pEIAAAAAAAAQEfcBcAAAAAAAAWABTqnSC/uTiyoNd4pdjYvCqv91XDlQAAAA==",
+  expectedTxid: "e69e52f032732b21e97667daf37d4aa6218ac7952f70db89585f702fd7069fee",
+  // OP_RETURN holds the nonce bytes in big-endian form.
   nonce: 0x7a4420n,
-  opReturnHex: "20447a",
+  opReturnHex: "7a4420",
 };
 

@@ -21,6 +21,56 @@ pushd "${CRATE_DIR}" >/dev/null
 wasm-pack build "${WASM_PACK_ARGS[@]}"
 popd >/dev/null
 
+strip_init_warnings() {
+  local js_file="$1"
+  if [ ! -f "${js_file}" ]; then
+    return
+  fi
+
+  python3 - "$js_file" <<'PYCODE'
+from pathlib import Path
+import re
+import sys
+
+path = Path(sys.argv[1])
+src = path.read_text()
+
+replacements = [
+    (
+        re.compile(
+            r"if \(typeof module !== 'undefined'\) {\s*"
+            r"if \(Object.getPrototypeOf\(module\) === Object\.prototype\) {\s*\({module} = module\)\s*}"
+            r"\s*else {\s*console\.warn\('using deprecated parameters for `initSync\(\)`; pass a single object instead'\)\s*}"
+            r"\s*}",
+            re.MULTILINE,
+        ),
+        "if (typeof module !== 'undefined' && Object.getPrototypeOf(module) === Object.prototype) {\\n        ({module} = module)\\n    }",
+    ),
+    (
+        re.compile(
+            r"if \(typeof module_or_path !== 'undefined'\) {\s*"
+            r"if \(Object.getPrototypeOf\(module_or_path\) === Object\.prototype\) {\s*\({module_or_path} = module_or_path\)\s*}"
+            r"\s*else {\s*console\.warn\('using deprecated parameters for the initialization function; pass a single object instead'\)\s*}"
+            r"\s*}",
+            re.MULTILINE,
+        ),
+        "if (typeof module_or_path !== 'undefined' && Object.getPrototypeOf(module_or_path) === Object.prototype) {\\n        ({module_or_path} = module_or_path)\\n    }",
+    ),
+]
+
+updated = src
+for pattern, replacement in replacements:
+    updated = pattern.sub(replacement, updated)
+
+if updated != src:
+    path.write_text(updated)
+else:
+    print(f"Warning: no deprecation warnings removed in {path}", file=sys.stderr)
+PYCODE
+}
+
+strip_init_warnings "${PKG_DIR}/zeldhash_miner_wasm.js"
+
 # Sync the generated pkg into the destinations the JS packages expect.
 # Exclude .gitignore so npm pack includes the wasm artifacts.
 rsync -a --delete --exclude='.gitignore' "${PKG_DIR}/" "${OUT_DIR}/"

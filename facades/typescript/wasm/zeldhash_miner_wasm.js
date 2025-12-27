@@ -234,12 +234,12 @@ if (!('encodeInto' in cachedTextEncoder)) {
 
 let WASM_VECTOR_LEN = 0;
 
-function wasm_bindgen__convert__closures_____invoke__h7dea4b7f169146c3(arg0, arg1, arg2) {
-    wasm.wasm_bindgen__convert__closures_____invoke__h7dea4b7f169146c3(arg0, arg1, arg2);
-}
-
 function wasm_bindgen__convert__closures_____invoke__h46584d0b4cdbb530(arg0, arg1, arg2) {
     wasm.wasm_bindgen__convert__closures_____invoke__h46584d0b4cdbb530(arg0, arg1, arg2);
+}
+
+function wasm_bindgen__convert__closures_____invoke__h7dea4b7f169146c3(arg0, arg1, arg2) {
+    wasm.wasm_bindgen__convert__closures_____invoke__h7dea4b7f169146c3(arg0, arg1, arg2);
 }
 
 function wasm_bindgen__convert__closures_____invoke__h998b7a7fb3eb0867(arg0, arg1, arg2, arg3) {
@@ -1366,12 +1366,8 @@ function initSync(module) {
     if (wasm !== undefined) return wasm;
 
 
-    if (typeof module !== 'undefined') {
-        if (Object.getPrototypeOf(module) === Object.prototype) {
-            ({module} = module)
-        } else {
-            console.warn('using deprecated parameters for `initSync()`; pass a single object instead')
-        }
+    if (typeof module !== 'undefined' && Object.getPrototypeOf(module) === Object.prototype) {
+        ({module} = module)
     }
 
     const imports = __wbg_get_imports();
@@ -1386,12 +1382,8 @@ async function __wbg_init(module_or_path) {
     if (wasm !== undefined) return wasm;
 
 
-    if (typeof module_or_path !== 'undefined') {
-        if (Object.getPrototypeOf(module_or_path) === Object.prototype) {
-            ({module_or_path} = module_or_path)
-        } else {
-            console.warn('using deprecated parameters for the initialization function; pass a single object instead')
-        }
+    if (typeof module_or_path !== 'undefined' && Object.getPrototypeOf(module_or_path) === Object.prototype) {
+        ({module_or_path} = module_or_path)
     }
 
     if (typeof module_or_path === 'undefined') {

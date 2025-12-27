@@ -120,8 +120,8 @@ pub struct MiningTemplate {
 
 pub struct TransactionPlan {
     pub inputs: Vec<TxInput>,
-    pub user_outputs: Vec<TxOutput>,
-    pub change_output: TxOutput,
+    pub outputs: Vec<TxOutput>,   // in caller order, excludes OP_RETURN
+    pub change_index: usize,      // index of the single change output
     pub op_return_script: Vec<u8>,
     pub op_return_size: usize,       // Payload len (without OP_RETURN/pushdata)
     pub distribution: Option<Vec<u64>>, // ZELD distribution values (if any)

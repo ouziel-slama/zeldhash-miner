@@ -95,7 +95,7 @@ const loadModule = async (): Promise<WasmExports> => {
 
   try {
     const wasmUrl = new URL(WASM_BINARY_PATH, import.meta.url);
-    await init(wasmUrl);
+    await init({ module_or_path: wasmUrl });
   } catch (err) {
     throw new Error(
       `Failed to initialize WASM bundle: ${formatError(err)}`

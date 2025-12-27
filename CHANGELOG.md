@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2025-12-27
+
+### Changed
+
+#### Output Ordering (Breaking)
+- **Stable output order**: Non-OP_RETURN outputs now preserve the exact order provided by the caller, including the change output at its specified position
+- **OP_RETURN always last**: The OP_RETURN output is always appended as the final output in the transaction
+- **`TransactionPlan` refactored**: Replaced `user_outputs` + `change_output` with a unified `outputs` array and `change_index` field
+
+**Migration**: If you relied on the previous ordering (user outputs → OP_RETURN → change), update your code to expect the new order (caller-specified outputs → OP_RETURN). The change output is now at the index you specified, not always last.
+
+### Fixed
+
+#### WASM Module
+- Fixed deprecated `init()` call syntax in TypeScript SDK — now passes `{ module_or_path: url }` object instead of URL directly
+- Build script now strips wasm-bindgen deprecation warnings from generated JS glue code
+
+#### Release Scripts
+- Fixed `release-crate.sh` array parsing with proper `read -ra` syntax
+- Added crate existence check to skip already published versions on crates.io
+- Fixed `tomllib.load()` to use binary file mode (Python 3.11+ compliance)
+- Fixed `release-npm.sh` Node.js heredoc syntax for cross-platform compatibility
+- Added `User-Agent` header to crates.io API requests (required by their rate limiting)
+
+#### CI/CD
+- Release workflow now triggers on GitHub release publish events
+- Added `environment: default` for proper secrets access
+
+### Documentation
+
+- Updated README with stable output ordering behavior
+- Updated `ARCHITECTURE.md` with new `TransactionPlan` structure
+
+---
+
 ## [0.1.0] - 2024-12-25
 
 ### Added
@@ -91,5 +126,6 @@ zeldhash-miner/
 
 ---
 
+[0.2.0]: https://github.com/zeldhash/zeldhash-miner/releases/tag/v0.2.0
 [0.1.0]: https://github.com/zeldhash/zeldhash-miner/releases/tag/v0.1.0
 

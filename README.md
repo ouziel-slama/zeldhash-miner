@@ -18,6 +18,8 @@
 - **SegWit support**: P2WPKH and P2TR (Taproot) addresses
 - **PSBT generation**: Produces unsigned PSBTs ready for wallet signing
 - **ZELD distribution**: Optional CBOR-encoded distribution in OP_RETURN
+- **Stable output ordering**: Non-OP_RETURN outputs stay in the order provided
+  (change included); the OP_RETURN is always appended last.
 
 ## SDKs
 
