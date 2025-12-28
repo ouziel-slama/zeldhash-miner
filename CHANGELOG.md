@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2025-12-28
+
+### Fixed
+
+#### TypeScript SDK
+- **Fixed missing `worker.js` in npm package**: The build now generates `dist/worker.js` as a separate entry point. Previously, only `dist/index.js` was built, causing consumer scripts (like `zeldwallet-setup`) to fail when trying to copy the worker file
+
+---
+
 ## [0.2.3] - 2025-12-28
 
 ### Fixed

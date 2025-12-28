@@ -17,10 +17,13 @@ export default defineConfig({
   ],
   build: {
     lib: {
-      entry: resolve(__dirname, "src/index.ts"),
+      entry: {
+        index: resolve(__dirname, "src/index.ts"),
+        worker: resolve(__dirname, "src/worker.ts"),
+      },
       name: "ZeldMiner",
       formats: ["es"],
-      fileName: () => "index.js",
+      fileName: (_, entryName) => `${entryName}.js`,
     },
     assetsDir: ".",
     target: "es2022",
