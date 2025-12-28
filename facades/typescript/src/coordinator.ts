@@ -131,11 +131,24 @@ export class MiningCoordinator {
     this.listeners[event].forEach((handler) => handler(payload));
   }
 
+  private resolveWorkerUrl(): string {
+    const origin =
+      typeof location !== "undefined" && location.origin
+        ? location.origin
+        : typeof self !== "undefined" &&
+            (self as { location?: { origin?: string } }).location?.origin
+          ? (self as { location?: { origin?: string } }).location!.origin
+          : undefined;
+    if (origin) return `${origin}/worker.js`;
+    return new URL("./worker.ts", import.meta.url).href;
+  }
+
   private async spawnWorkers(): Promise<void> {
     const readySignals: Promise<void>[] = [];
+    const workerUrl = this.resolveWorkerUrl();
 
     for (let i = 0; i < this.workerCount; i += 1) {
-      const worker = new Worker(new URL("./worker.ts", import.meta.url), {
+      const worker = new Worker(workerUrl, {
         type: "module",
         /* @vite-ignore */ name: `zeldminer-worker-${i}`,
       });

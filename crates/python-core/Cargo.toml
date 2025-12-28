@@ -1,6 +1,6 @@
 [package]
 name = "zeldhash-miner-python-core"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 authors = ["Ouziel Slama <ouziel@gmail.com>"]
 license = "MIT"

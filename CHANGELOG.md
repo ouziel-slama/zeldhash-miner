@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2025-12-28
+
+### Fixed
+
+#### TypeScript SDK
+- **Fixed worker URL resolution for bundlers**: Worker URL now resolves via `location.origin` (or `self.location.origin` in worker contexts) before falling back to `import.meta.url`, ensuring correct paths when hosted applications use bundlers
+- **Fixed WASM dynamic import for bundlers**: WASM module is now loaded via runtime `eval`-based dynamic import to prevent bundlers (Vite, Webpack, etc.) from rewriting the import path, ensuring the WASM is fetched from the public `/wasm/` directory
+
+---
+
 ## [0.2.2] - 2025-12-28
 
 ### Fixed
@@ -144,6 +154,7 @@ zeldhash-miner/
 
 ---
 
+[0.2.3]: https://github.com/zeldhash/zeldhash-miner/releases/tag/v0.2.3
 [0.2.2]: https://github.com/zeldhash/zeldhash-miner/releases/tag/v0.2.2
 [0.2.1]: https://github.com/zeldhash/zeldhash-miner/releases/tag/v0.2.1
 [0.2.0]: https://github.com/zeldhash/zeldhash-miner/releases/tag/v0.2.0

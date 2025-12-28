@@ -90,6 +90,13 @@ const WASM_BASE_URL = resolveWasmBase();
 const WASM_JS_PATH = `${WASM_BASE_URL}zeldhash_miner_wasm.js`;
 const WASM_BINARY_PATH = `${WASM_BASE_URL}zeldhash_miner_wasm_bg.wasm`;
 
+const dynamicImport = async <T>(specifier: string): Promise<T> => {
+  // Use eval to avoid bundlers rewriting the import path when we intentionally
+  // want to fetch from the public /wasm/ directory.
+  const importer = (0, eval)("s => import(s)") as (s: string) => Promise<T>;
+  return importer(specifier);
+};
+
 const formatError = (err: unknown): string =>
   err instanceof Error ? err.message : String(err);
 
@@ -98,7 +105,7 @@ const loadModule = async (): Promise<WasmExports> => {
 
   let bindings: unknown;
   try {
-    bindings = await import(/* @vite-ignore */ WASM_JS_PATH);
+    bindings = await dynamicImport<WasmExports>(/* @vite-ignore */ WASM_JS_PATH);
   } catch (err) {
     throw new Error(
       `Failed to import WASM bundle (${WASM_JS_PATH}). ` +
