@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  // Use relative paths so worker/script URLs stay relative in the published build.
+  base: "./",
   plugins: [
     dts({
       rollupTypes: true,

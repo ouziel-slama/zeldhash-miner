@@ -12,9 +12,9 @@ pollster = { version = "0.3" }
 rayon = { version = "1.7" }
 serde = { version = "1", features = ["derive"] }
 thiserror = "1.0"
-zeldhash-miner-core = { version = "0.2.0", path = "crates/core" }
-zeldhash-miner-gpu = { version = "0.2.0", path = "crates/gpu" }
-zeldhash-miner-wasm = { version = "0.2.0", path = "crates/wasm" }
+zeldhash-miner-core = { version = "0.2.1", path = "crates/core" }
+zeldhash-miner-gpu = { version = "0.2.1", path = "crates/gpu" }
+zeldhash-miner-wasm = { version = "0.2.1", path = "crates/wasm" }
 # Ensure deterministic WASM outputs so the generated JS/TS bindings stop
 # changing across builds. Limit the tighter settings to the WASM crate so other
 # packages keep their default parallel codegen.

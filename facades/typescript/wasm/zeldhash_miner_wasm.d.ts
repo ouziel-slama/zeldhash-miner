@@ -44,10 +44,10 @@ export interface InitOutput {
   readonly mine_range_gpu: (a: any, b: any, c: number, d: number, e: bigint, f: any, g: number, h: any) => any;
   readonly calibrate_batch_size: () => any;
   readonly init_panic_hook: () => void;
-  readonly wasm_bindgen__convert__closures_____invoke__h46584d0b4cdbb530: (a: number, b: number, c: any) => void;
-  readonly wasm_bindgen__closure__destroy__h6696f91b6795d985: (a: number, b: number) => void;
   readonly wasm_bindgen__convert__closures_____invoke__h7dea4b7f169146c3: (a: number, b: number, c: any) => void;
   readonly wasm_bindgen__closure__destroy__h226a531c6ac0c8ef: (a: number, b: number) => void;
+  readonly wasm_bindgen__convert__closures_____invoke__h46584d0b4cdbb530: (a: number, b: number, c: any) => void;
+  readonly wasm_bindgen__closure__destroy__h6696f91b6795d985: (a: number, b: number) => void;
   readonly wasm_bindgen__convert__closures_____invoke__h998b7a7fb3eb0867: (a: number, b: number, c: any, d: any) => void;
   readonly __wbindgen_exn_store: (a: number) => void;
   readonly __externref_table_alloc: () => number;
