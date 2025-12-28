@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2025-12-28
+
+### Fixed
+
+#### Web Demo
+- **Fixed worker loading error in dev mode**: Added Vite plugin to redirect `/worker.js` requests to the worker entry point, and created a worker shim (`src/worker.ts`) that imports the library's worker module. Previously, the `MiningCoordinator` tried to load `/worker.js` which didn't exist, causing "MIME type text/html" errors
+- **Fixed worker output in production build**: Added Rollup configuration to generate `worker.js` at the root of the dist folder for proper resolution
+
+---
+
 ## [0.2.4] - 2025-12-28
 
 ### Fixed
@@ -163,6 +173,8 @@ zeldhash-miner/
 
 ---
 
+[0.2.5]: https://github.com/zeldhash/zeldhash-miner/releases/tag/v0.2.5
+[0.2.4]: https://github.com/zeldhash/zeldhash-miner/releases/tag/v0.2.4
 [0.2.3]: https://github.com/zeldhash/zeldhash-miner/releases/tag/v0.2.3
 [0.2.2]: https://github.com/zeldhash/zeldhash-miner/releases/tag/v0.2.2
 [0.2.1]: https://github.com/zeldhash/zeldhash-miner/releases/tag/v0.2.1

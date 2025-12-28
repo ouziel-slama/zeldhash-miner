@@ -1,6 +1,6 @@
 {
   "name": "zeldhash-demo",
-  "version": "0.2.0",
+  "version": "0.2.5",
   "author": "Ouziel Slama <ouziel@gmail.com>",
   "private": true,
   "type": "module",
