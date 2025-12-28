@@ -204,9 +204,39 @@ try {
 
 ## Runtime Notes
 
-- The WASM artifacts live in `node_modules/zeldhash-miner/wasm`. Most modern bundlers copy them automatically because the SDK loads them via `new URL("./wasm/zeldhash_miner_wasm_bg.wasm", import.meta.url)`.
-- If your bundler does not copy assets automatically, copy the `wasm/` folder to your public/static assets.
-- WebGPU is optional. When `useWebGPU` is `true`, the miner auto-detects support and silently falls back to CPU.
+### WASM Asset Loading
+
+The SDK automatically loads WASM assets from `/wasm/` on your application's origin. This works out of the box with most setups:
+
+1. **Copy assets to your public folder**: Copy the `wasm/` folder from `node_modules/zeldhash-miner/` to your app's `public/` directory:
+   ```bash
+   cp -r node_modules/zeldhash-miner/wasm public/wasm
+   ```
+
+2. **Also copy the worker**: The worker script needs to be served from your app as well:
+   ```bash
+   cp node_modules/zeldhash-miner/dist/worker.js public/worker.js
+   ```
+
+The SDK bootstraps `globalThis.__ZELDMINER_WASM_BASE__` to `/wasm/` (relative to your app's origin) automatically, so WASM files are fetched from `https://your-app.com/wasm/` rather than from inside `node_modules/`.
+
+### Custom WASM Path
+
+If you need to serve WASM assets from a different location, you can override the base path:
+
+```ts
+// Set before importing ZeldMiner
+globalThis.__ZELDMINER_WASM_BASE__ = "/custom/path/to/wasm/";
+```
+
+Or use environment variables with Vite:
+```bash
+VITE_ZELDMINER_WASM_BASE=/custom/wasm/
+```
+
+### WebGPU
+
+WebGPU is optional. When `useWebGPU` is `true`, the miner auto-detects support and silently falls back to CPU.
 
 ## Build & Test
 

@@ -199,12 +199,16 @@ Simply copy the files to your server's static directory and include them:
 
 ### WASM Base URL
 
-The package looks for WASM files in this order:
+The package **automatically bootstraps** `globalThis.__ZELDMINER_WASM_BASE__` to `/wasm/` relative to your application's origin. This means WASM files are fetched from `https://your-app.com/wasm/` rather than from inside `node_modules/`, which resolves 404 errors in Vite dev mode.
 
-1. `globalThis.__ZELDMINER_WASM_BASE__` - Global variable (set before import)
+The resolution order is:
+
+1. `globalThis.__ZELDMINER_WASM_BASE__` - Automatically set to `/wasm/` on your app's origin (or you can override it before import)
 2. `import.meta.env.VITE_ZELDMINER_WASM_BASE` - Vite environment variable
 3. `import.meta.env.BASE_URL + 'wasm/'` - Vite base URL + wasm/
 4. `/wasm/` - Default fallback
+
+**Note:** Since the bootstrap runs automatically, you only need to copy the WASM/worker files to your `public/` folder. No additional configuration is required unless you want a custom path.
 
 **Example: Custom path**
 

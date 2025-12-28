@@ -1,5 +1,23 @@
 import type { WasmExports } from "./types";
 
+// Bootstrap: define a sensible default for WASM base path so consumers don't
+// need to patch the library. In Vite/dev the import.meta.url points inside
+// node_modules which is not served, so we derive a public path from the window
+// origin when available.
+if (typeof (globalThis as { __ZELDMINER_WASM_BASE__?: unknown }).__ZELDMINER_WASM_BASE__ === "undefined") {
+  try {
+    const origin =
+      typeof window !== "undefined" && window.location?.origin
+        ? window.location.origin
+        : typeof self !== "undefined" && (self as { location?: { origin?: string } }).location?.origin
+          ? (self as { location?: { origin?: string } }).location!.origin
+          : "http://localhost";
+    (globalThis as { __ZELDMINER_WASM_BASE__?: string }).__ZELDMINER_WASM_BASE__ = new URL("/wasm/", origin!).href;
+  } catch {
+    (globalThis as { __ZELDMINER_WASM_BASE__?: string }).__ZELDMINER_WASM_BASE__ = "/wasm/";
+  }
+}
+
 let wasmModule: WasmExports | null = null;
 let wasmInitPromise: Promise<WasmExports> | null = null;
 

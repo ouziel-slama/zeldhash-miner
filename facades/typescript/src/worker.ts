@@ -1,3 +1,18 @@
+// Bootstrap: define a sensible default for WASM base path in worker context.
+// Workers don't have `window`, but `self` provides location. This must run
+// before any import that calls resolveWasmBase().
+if (typeof (globalThis as { __ZELDMINER_WASM_BASE__?: unknown }).__ZELDMINER_WASM_BASE__ === "undefined") {
+  try {
+    const origin =
+      typeof self !== "undefined" && (self as { location?: { origin?: string } }).location?.origin
+        ? (self as { location?: { origin?: string } }).location!.origin
+        : "http://localhost";
+    (globalThis as { __ZELDMINER_WASM_BASE__?: string }).__ZELDMINER_WASM_BASE__ = new URL("/wasm/", origin!).href;
+  } catch {
+    (globalThis as { __ZELDMINER_WASM_BASE__?: string }).__ZELDMINER_WASM_BASE__ = "/wasm/";
+  }
+}
+
 import type {
   MineResult,
   ValidationResult,
