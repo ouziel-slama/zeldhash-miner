@@ -5,7 +5,7 @@
     "Ouziel Slama <ouziel@gmail.com>"
   ],
   "description": "WASM bindings for the Zeldhash miner with optional WebGPU acceleration",
-  "version": "0.2.3",
+  "version": "0.2.5",
   "license": "MIT",
   "repository": {
     "type": "git",
