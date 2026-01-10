@@ -1,6 +1,6 @@
 {
   "name": "zeldhash-miner",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "author": "Ouziel Slama <ouziel@gmail.com>",
   "type": "module",
   "main": "dist/index.js",
@@ -28,7 +28,7 @@
     "type": "git",
     "url": "https://github.com/zeldhash/zeldhash-miner.git"
   },
-  "homepage": "https://github.com/zeldhash/zeldhash-miner",
+  "homepage": "https://zeldhash.com",
   "bugs": {
     "url": "https://github.com/zeldhash/zeldhash-miner/issues"
   },

@@ -227,14 +227,10 @@ export class TransactionBuilder {
     }
 
     const changeCount = outputs.filter((o) => o.change).length;
-    if (changeCount !== 1) {
-      const code =
-        changeCount === 0
-          ? ZeldMinerErrorCode.NO_CHANGE_OUTPUT
-          : ZeldMinerErrorCode.MULTIPLE_CHANGE_OUTPUTS;
+    if (changeCount > 1) {
       throw createMinerError(
-        code,
-        "Exactly one change output is required",
+        ZeldMinerErrorCode.MULTIPLE_CHANGE_OUTPUTS,
+        "At most one change output is allowed",
         { changeCount }
       );
     }

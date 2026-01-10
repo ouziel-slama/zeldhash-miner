@@ -120,8 +120,10 @@ pub struct MiningTemplate {
 
 pub struct TransactionPlan {
     pub inputs: Vec<TxInput>,
-    pub outputs: Vec<TxOutput>,   // in caller order, excludes OP_RETURN
-    pub change_index: usize,      // index of the single change output
+    pub outputs: Vec<TxOutput>,       // in caller order, excludes OP_RETURN
+    // If the change amount would be dust, the change output is omitted and the
+    // sats flow to fees. Transactions may also be built with no change output.
+    pub change_index: Option<usize>,  // index of the change output (if present)
     pub op_return_script: Vec<u8>,
     pub op_return_size: usize,       // Payload len (without OP_RETURN/pushdata)
     pub distribution: Option<Vec<u64>>, // ZELD distribution values (if any)
@@ -430,7 +432,6 @@ enum ZeldMinerErrorCode {
     INVALID_ADDRESS,
     UNSUPPORTED_ADDRESS_TYPE,
     INSUFFICIENT_FUNDS,
-    NO_CHANGE_OUTPUT,
     MULTIPLE_CHANGE_OUTPUTS,
     INVALID_INPUT,
     WEBGPU_NOT_AVAILABLE,

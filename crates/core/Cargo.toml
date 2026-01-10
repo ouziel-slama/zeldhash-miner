@@ -1,12 +1,12 @@
 [package]
 name = "zeldhash-miner-core"
-version = "0.2.5"
+version = "0.3.0"
 edition = "2021"
 authors = ["Ouziel Slama <ouziel@gmail.com>"]
 license = "MIT"
 description = "Core cryptographic and transaction-building primitives for Zeldhash miner"
 repository = "https://github.com/zeldhash/zeldhash-miner"
-homepage = "https://github.com/zeldhash/zeldhash-miner"
+homepage = "https://zeldhash.com"
 keywords = ["bitcoin", "mining", "psbt", "crypto"]
 categories = ["cryptography", "cryptography::cryptocurrencies"]
 

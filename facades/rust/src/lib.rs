@@ -529,9 +529,6 @@ fn parse_inputs(inputs: &[TxInputDesc]) -> Result<Vec<TxInput>> {
 fn map_miner_error(err: MinerError) -> ZeldMinerError {
     match err {
         MinerError::InvalidInput(msg) => ZeldMinerError::new(ZeldMinerErrorCode::InvalidInput, msg),
-        MinerError::MissingChangeOutput => {
-            ZeldMinerError::new(ZeldMinerErrorCode::NoChangeOutput, "missing change output")
-        }
         MinerError::MultipleChangeOutputs => ZeldMinerError::new(
             ZeldMinerErrorCode::MultipleChangeOutputs,
             "multiple change outputs are not allowed",
@@ -547,9 +544,6 @@ fn map_miner_error(err: MinerError) -> ZeldMinerError {
             zeldhash_miner_core::ZeldError::Fee(fee_err) => match fee_err {
                 FeeError::InsufficientFunds => {
                     ZeldMinerError::new(ZeldMinerErrorCode::InsufficientFunds, fee_err.to_string())
-                }
-                FeeError::DustOutput => {
-                    ZeldMinerError::new(ZeldMinerErrorCode::DustOutput, fee_err.to_string())
                 }
             },
             zeldhash_miner_core::ZeldError::Tx(_) | zeldhash_miner_core::ZeldError::Psbt(_) => {
@@ -1080,6 +1074,61 @@ mod tests {
         assert_eq!(result.nonce, 0);
 
         let psbt = Psbt::from_str(&result.psbt).expect("psbt parses");
+        let txid = psbt.unsigned_tx.compute_txid().to_string();
+        assert_eq!(txid, result.txid);
+    }
+
+    #[test]
+    fn mines_successfully_when_change_is_dust() {
+        // Craft amounts so that change ends up below dust limit
+        // P2WPKH dust limit is 310 sats
+        // For a tx with 1 input, 2 outputs (user + change) + OP_RETURN:
+        // vsize ~ 129 vbytes at 2 sats/vB = 258 sats fee
+        // With input=10000, user=9500, fee~258, change would be ~242 (below dust limit of 310)
+        let miner = ZeldMiner::new(ZeldMinerOptions {
+            network: NetworkOption::Mainnet,
+            batch_size: 4,
+            use_gpu: false,
+            worker_threads: 1,
+            sats_per_vbyte: 2,
+        })
+        .expect("miner builds");
+
+        let (user_addr, change_addr) = sample_addresses();
+
+        let params = MineParams {
+            inputs: vec![sample_input_desc(10_000)],
+            outputs: vec![
+                TxOutputDesc {
+                    address: user_addr,
+                    amount: Some(9_500), // Leave ~500 sats for fee + dust change
+                    change: false,
+                },
+                TxOutputDesc {
+                    address: change_addr,
+                    amount: None,
+                    change: true,
+                },
+            ],
+            target_zeros: 0,
+            start_nonce: Some(0),
+            batch_size: Some(4),
+            distribution: None,
+        };
+
+        let result = miner
+            .mine_transaction(params, None::<fn(ProgressStats)>, None::<fn(&MineResult)>)
+            .expect("mining should succeed even when change is dust");
+
+        // PSBT should parse and only have 2 outputs: user + OP_RETURN (no change)
+        let psbt = Psbt::from_str(&result.psbt).expect("psbt parses");
+        assert_eq!(
+            psbt.unsigned_tx.output.len(),
+            2,
+            "should have user output + OP_RETURN only (no change)"
+        );
+
+        // Verify the txid matches
         let txid = psbt.unsigned_tx.compute_txid().to_string();
         assert_eq!(txid, result.txid);
     }

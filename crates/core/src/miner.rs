@@ -36,9 +36,11 @@ pub struct OutputRequest {
 pub struct TransactionPlan {
     pub inputs: Vec<TxInput>,
     /// All non-OP_RETURN outputs in the exact order provided by the caller.
+    /// If change was dust, the change output is excluded.
     pub outputs: Vec<TxOutput>,
-    /// Index of the single change output within `outputs`.
-    pub change_index: usize,
+    /// Index of the change output within `outputs`, if present.
+    /// `None` if change was dust and omitted.
+    pub change_index: Option<usize>,
     pub op_return_script: Vec<u8>,
     pub op_return_size: usize,
     pub distribution: Option<Vec<u64>>,
@@ -68,8 +70,6 @@ pub struct MineResult {
 pub enum MinerError {
     #[error("invalid input: {0}")]
     InvalidInput(String),
-    #[error("missing change output")]
-    MissingChangeOutput,
     #[error("multiple change outputs are not allowed")]
     MultipleChangeOutputs,
     #[error(transparent)]
@@ -105,25 +105,27 @@ fn validate_fee_rate(sats_per_vbyte: u64) -> MinerResult<()> {
     Ok(())
 }
 
+/// Information about a potential change output.
+struct ChangeInfo {
+    index: usize,
+    address_type: AddressType,
+}
+
 fn collect_outputs(
     outputs: &[OutputRequest],
     network: Network,
-) -> MinerResult<(Vec<TxOutput>, usize, AddressType)> {
+) -> MinerResult<(Vec<TxOutput>, Option<ChangeInfo>)> {
     if outputs.is_empty() {
         return Err(MinerError::invalid("at least one output is required"));
     }
 
     let change_count = outputs.iter().filter(|o| o.change).count();
-    if change_count == 0 {
-        return Err(MinerError::MissingChangeOutput);
-    }
     if change_count > 1 {
         return Err(MinerError::MultipleChangeOutputs);
     }
 
     let mut ordered_outputs = Vec::with_capacity(outputs.len());
-    let mut change_address_type: Option<AddressType> = None;
-    let mut change_index: Option<usize> = None;
+    let mut change_info: Option<ChangeInfo> = None;
 
     for (idx, output) in outputs.iter().enumerate() {
         let parsed = parse_address_for_network(&output.address, Some(network))
@@ -132,11 +134,13 @@ fn collect_outputs(
         let dust_limit = dust_limit_for_address(parsed.address_type);
 
         if output.change {
-            if change_index.is_some() {
+            if change_info.is_some() {
                 return Err(MinerError::MultipleChangeOutputs);
             }
-            change_address_type = Some(parsed.address_type);
-            change_index = Some(idx);
+            change_info = Some(ChangeInfo {
+                index: idx,
+                address_type: parsed.address_type,
+            });
             // Amount will be filled after fee calculation; keep placeholder.
             ordered_outputs.push(TxOutput {
                 script_pubkey: spk,
@@ -162,11 +166,7 @@ fn collect_outputs(
         });
     }
 
-    let change_address_type =
-        change_address_type.ok_or_else(|| MinerError::invalid("missing change output"))?;
-    let change_index = change_index.ok_or(MinerError::MissingChangeOutput)?;
-
-    Ok((ordered_outputs, change_index, change_address_type))
+    Ok((ordered_outputs, change_info))
 }
 
 fn validate_cbor_nonce_len(len: usize) -> MinerResult<()> {
@@ -208,60 +208,104 @@ pub fn plan_transaction(
 ) -> MinerResult<TransactionPlan> {
     validate_fee_rate(sats_per_vbyte)?;
 
-    let (mut ordered_outputs, change_index, change_address_type) =
-        collect_outputs(&outputs, network)?;
-    let change_dust_limit = dust_limit_for_address(change_address_type);
-    if let Some(dist) = distribution {
-        let outputs_len = ordered_outputs.len();
-        if dist.len() != outputs_len {
-            return Err(MinerError::invalid(format!(
-                "distribution length ({}) must match outputs ({})",
-                dist.len(),
-                outputs_len
-            )));
-        }
-    }
+    let (mut ordered_outputs, change_info) = collect_outputs(&outputs, network)?;
+
+    // Determine dust limit for change (if any)
+    let change_dust_limit = change_info
+        .as_ref()
+        .map(|info| dust_limit_for_address(info.address_type))
+        .unwrap_or(0);
 
     let total_input: u64 = inputs.iter().map(|i| i.amount).sum();
     let outputs_sum: u64 = ordered_outputs
         .iter()
         .enumerate()
-        .filter_map(|(idx, o)| (idx != change_index).then_some(o.amount))
+        .filter_map(|(idx, o)| {
+            let is_change = change_info.as_ref().is_some_and(|info| idx == info.index);
+            (!is_change).then_some(o.amount)
+        })
         .sum();
 
-    // Include change output (amount placeholder) for accurate fee estimation.
-    let outputs_for_fee = ordered_outputs.clone();
-
-    let (op_return_script, op_return_size, distribution_owned) = if let Some(dist) = distribution {
-        let (payload, payload_len) = build_distribution_payload(dist, op_return_payload)?;
-        let script = create_op_return_script(&payload);
-        (script, payload_len, Some(dist.to_vec()))
+    let (op_return_size_for_fee, distribution_owned) = if let Some(dist) = distribution {
+        let (_, payload_len) = build_distribution_payload(dist, op_return_payload)?;
+        (payload_len, Some(dist.to_vec()))
     } else {
-        let script = create_op_return_script(op_return_payload);
-        (script, op_return_payload.len(), None)
+        (op_return_payload.len(), None)
     };
 
-    let vsize = calculate_vsize(&inputs, &outputs_for_fee, op_return_size);
+    // Calculate fee with change output included (if present) for accurate estimation
+    let vsize = calculate_vsize(&inputs, &ordered_outputs, op_return_size_for_fee);
     let fee = calculate_fee(vsize, sats_per_vbyte);
-    let change_amount = calculate_change(total_input, outputs_sum, fee, change_dust_limit)
-        .map_err(|err| match err {
-            FeeError::InsufficientFunds => MinerError::invalid("insufficient funds for outputs"),
-            FeeError::DustOutput => MinerError::invalid(format!(
-                "change would be dust (requires at least {change_dust_limit} sats)"
-            )),
-        })?;
 
-    if let Some(change) = ordered_outputs.get_mut(change_index) {
-        change.amount = change_amount;
+    // Determine if we have a change output and its amount
+    let (final_outputs, final_change_index, final_distribution) = if let Some(info) = change_info {
+        let change_amount = calculate_change(total_input, outputs_sum, fee, change_dust_limit)
+            .map_err(|FeeError::InsufficientFunds| {
+                MinerError::invalid("insufficient funds for outputs")
+            })?;
+
+        match change_amount {
+            Some(amount) => {
+                // Change is above dust limit, include it
+                if let Some(change) = ordered_outputs.get_mut(info.index) {
+                    change.amount = amount;
+                }
+                (ordered_outputs, Some(info.index), distribution_owned)
+            }
+            None => {
+                // Change would be dust, remove the change output
+                ordered_outputs.remove(info.index);
+
+                // Adjust distribution if present (remove the change entry)
+                let adjusted_distribution = distribution_owned.map(|mut dist| {
+                    if info.index < dist.len() {
+                        dist.remove(info.index);
+                    }
+                    dist
+                });
+
+                (ordered_outputs, None, adjusted_distribution)
+            }
+        }
+    } else {
+        // No change output specified
+        // Verify we have enough funds for outputs + fee
+        if total_input < outputs_sum + fee {
+            return Err(MinerError::invalid("insufficient funds for outputs"));
+        }
+        (ordered_outputs, None, distribution_owned)
+    };
+
+    // Validate distribution length matches final outputs
+    if let Some(ref dist) = final_distribution {
+        if dist.len() != final_outputs.len() {
+            return Err(MinerError::invalid(format!(
+                "distribution length ({}) must match outputs ({})",
+                dist.len(),
+                final_outputs.len()
+            )));
+        }
     }
+
+    // Rebuild OP_RETURN script/size using the final distribution (if any)
+    let (op_return_script, op_return_size) = match final_distribution.as_ref() {
+        Some(dist) => {
+            let (payload, payload_len) = build_distribution_payload(dist, op_return_payload)?;
+            (create_op_return_script(&payload), payload_len)
+        }
+        None => (
+            create_op_return_script(op_return_payload),
+            op_return_payload.len(),
+        ),
+    };
 
     Ok(TransactionPlan {
         inputs,
-        outputs: ordered_outputs,
-        change_index,
+        outputs: final_outputs,
+        change_index: final_change_index,
         op_return_script,
         op_return_size,
-        distribution: distribution_owned,
+        distribution: final_distribution,
     })
 }
 
@@ -656,7 +700,7 @@ mod tests {
         let change_dust_limit = dust_limit_for_addr(&change_addr, network);
 
         assert_eq!(plan.outputs.len(), 2);
-        assert_eq!(plan.change_index, 1);
+        assert_eq!(plan.change_index, Some(1));
         assert_eq!(plan.outputs[0].script_pubkey, user_spk);
         assert_eq!(plan.outputs[1].script_pubkey, change_spk);
         assert_eq!(plan.outputs[1].amount, expected_change);
@@ -669,7 +713,7 @@ mod tests {
     }
 
     #[test]
-    fn plan_transaction_rejects_dusty_change() {
+    fn plan_transaction_omits_dusty_change() {
         let network = Network::Mainnet;
         let (user_addr, change_addr) = sample_addresses(network);
         let inputs = vec![sample_input(20_000, &change_addr, network)];
@@ -681,7 +725,7 @@ mod tests {
         let change_spk = script_pubkey(&change_addr, network);
         let outputs_for_fee = vec![
             TxOutput {
-                script_pubkey: user_spk,
+                script_pubkey: user_spk.clone(),
                 amount: outputs[0].amount.unwrap(),
             },
             TxOutput {
@@ -696,18 +740,76 @@ mod tests {
         let max_fee_before_dust = total_input - outputs_sum - change_dust_limit;
         let sats_per_vbyte = (max_fee_before_dust / vsize as u64) + 1;
 
-        let err = plan_transaction(inputs, outputs, network, sats_per_vbyte, &op_return, None)
-            .expect_err("fee choice should make change dust");
+        // Now the plan should succeed, but omit the change output
+        let plan = plan_transaction(inputs, outputs, network, sats_per_vbyte, &op_return, None)
+            .expect("plan should succeed with dusty change omitted");
 
-        match err {
-            MinerError::InvalidInput(msg) => {
-                assert!(
-                    msg.to_lowercase().contains("dust"),
-                    "expected dust-related error, got: {msg}"
-                );
-            }
-            other => panic!("unexpected error: {other:?}"),
-        }
+        // Only the user output remains (change was omitted)
+        assert_eq!(plan.outputs.len(), 1);
+        assert_eq!(plan.change_index, None);
+        assert_eq!(plan.outputs[0].script_pubkey, user_spk);
+        assert_eq!(plan.outputs[0].amount, 8_000);
+    }
+
+    #[test]
+    fn plan_transaction_rebuilds_distribution_after_dusty_change() {
+        let network = Network::Mainnet;
+        let (user_addr, change_addr) = sample_addresses(network);
+        let inputs = vec![sample_input(20_000, &change_addr, network)];
+        let outputs = outputs(8_000, &user_addr, &change_addr);
+        let distribution = [900u64, 100];
+        let cbor_nonce = encode_cbor_uint(9);
+
+        let (_, payload_len_for_fee) =
+            build_distribution_payload(&distribution, &cbor_nonce).expect("payload must build");
+
+        let user_spk = script_pubkey(&user_addr, network);
+        let change_spk = script_pubkey(&change_addr, network);
+        let outputs_for_fee = vec![
+            TxOutput {
+                script_pubkey: user_spk.clone(),
+                amount: outputs[0].amount.unwrap(),
+            },
+            TxOutput {
+                script_pubkey: change_spk,
+                amount: 0,
+            },
+        ];
+
+        let vsize = calculate_vsize(&inputs, &outputs_for_fee, payload_len_for_fee);
+        let total_input: u64 = inputs.iter().map(|i| i.amount).sum();
+        let outputs_sum = outputs_for_fee[0].amount;
+        let change_dust_limit = dust_limit_for_addr(&change_addr, network);
+        let max_fee_before_dust = total_input - outputs_sum - change_dust_limit;
+        let sats_per_vbyte = (max_fee_before_dust / vsize as u64) + 1;
+
+        let plan = plan_transaction(
+            inputs,
+            outputs,
+            network,
+            sats_per_vbyte,
+            &cbor_nonce,
+            Some(&distribution),
+        )
+        .expect("plan should drop dusty change");
+
+        assert_eq!(plan.outputs.len(), 1);
+        assert_eq!(plan.change_index, None);
+        assert_eq!(plan.outputs[0].script_pubkey, user_spk);
+        assert_eq!(plan.outputs[0].amount, 8_000);
+
+        let adjusted_distribution = vec![distribution[0]];
+        assert_eq!(
+            plan.distribution.as_deref(),
+            Some(adjusted_distribution.as_slice())
+        );
+
+        let (expected_payload, expected_payload_len) =
+            build_distribution_payload(&adjusted_distribution, &cbor_nonce)
+                .expect("payload must rebuild");
+        let expected_script = create_op_return_script(&expected_payload);
+        assert_eq!(plan.op_return_size, expected_payload_len);
+        assert_eq!(plan.op_return_script, expected_script);
     }
 
     #[test]
@@ -929,7 +1031,7 @@ mod tests {
             .expect("plan should keep output order");
 
         assert_eq!(plan.outputs.len(), 3);
-        assert_eq!(plan.change_index, 1);
+        assert_eq!(plan.change_index, Some(1));
         assert_eq!(
             plan.outputs[0].script_pubkey,
             script_pubkey(&user_addr, network)

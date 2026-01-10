@@ -11,8 +11,6 @@ const P2TR_WITNESS_TYPICAL: usize = 1 /* stack items */ + 1 /* sig len */ + 64 /
 pub enum FeeError {
     #[error("insufficient funds for outputs and fee")]
     InsufficientFunds,
-    #[error("change would be dust")]
-    DustOutput,
 }
 
 /// Estimate virtual size (vbytes) for a SegWit transaction with a fixed-size OP_RETURN.
@@ -37,23 +35,28 @@ pub fn calculate_fee(vsize: usize, sat_per_vbyte: u64) -> u64 {
     vsize as u64 * sat_per_vbyte
 }
 
-/// Compute change amount, enforcing dust and sufficient funds rules.
+/// Compute change amount, enforcing sufficient funds rules.
+///
+/// Returns `Ok(Some(amount))` if the change is above the dust limit,
+/// `Ok(None)` if the change would be dust (caller should omit the change output),
+/// or `Err(FeeError::InsufficientFunds)` if there aren't enough funds.
 pub fn calculate_change(
     total_input: u64,
     outputs_sum: u64,
     fee: u64,
     dust_limit: u64,
-) -> Result<u64, FeeError> {
+) -> Result<Option<u64>, FeeError> {
     if total_input < outputs_sum + fee {
         return Err(FeeError::InsufficientFunds);
     }
 
     let change = total_input - outputs_sum - fee;
     if change < dust_limit {
-        return Err(FeeError::DustOutput);
+        // Change would be dust; omit the change output and let extra sats go to miners
+        return Ok(None);
     }
 
-    Ok(change)
+    Ok(Some(change))
 }
 
 fn base_tx_size(inputs: &[TxInput], outputs: &[TxOutput], op_return_size: usize) -> usize {
@@ -161,13 +164,23 @@ mod tests {
     }
 
     #[test]
-    fn detects_insufficient_funds_and_dust() {
+    fn detects_insufficient_funds() {
         let err = calculate_change(10_000, 9_500, 600, 330).unwrap_err();
         assert_eq!(err, FeeError::InsufficientFunds);
+    }
 
-        // Construct a change amount below the dust limit (400 change was no longer dust).
-        let err = calculate_change(10_000, 9_400, 271, 330).unwrap_err(); // change = 329
-        assert_eq!(err, FeeError::DustOutput);
+    #[test]
+    fn returns_none_when_change_would_be_dust() {
+        // Change would be 329 sats, below dust limit of 330
+        let result = calculate_change(10_000, 9_400, 271, 330).unwrap();
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn returns_change_when_above_dust() {
+        // Change would be 330 sats, exactly at dust limit
+        let result = calculate_change(10_000, 9_400, 270, 330).unwrap();
+        assert_eq!(result, Some(330));
     }
 
     #[test]

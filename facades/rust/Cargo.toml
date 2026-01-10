@@ -1,12 +1,12 @@
 [package]
 name = "zeldhash-miner"
-version = "0.2.5"
+version = "0.3.0"
 edition = "2021"
 authors = ["Ouziel Slama <ouziel@gmail.com>"]
 description = "High-level CPU/WebGPU miner for vanity Bitcoin transaction IDs"
 license = "MIT"
 repository = "https://github.com/zeldhash/zeldhash-miner"
-homepage = "https://github.com/zeldhash/zeldhash-miner"
+homepage = "https://zeldhash.com"
 documentation = "https://docs.rs/zeldhash-miner"
 readme = "README.md"
 keywords = ["bitcoin", "mining", "wasm", "gpu", "zeldhash"]

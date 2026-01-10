@@ -194,13 +194,16 @@ try {
 | `INVALID_ADDRESS` | Address parsing failed |
 | `UNSUPPORTED_ADDRESS_TYPE` | Only P2WPKH and P2TR supported |
 | `INSUFFICIENT_FUNDS` | Inputs don't cover outputs + fees |
-| `NO_CHANGE_OUTPUT` | No output marked as change |
 | `MULTIPLE_CHANGE_OUTPUTS` | More than one change output |
 | `INVALID_INPUT` | Bad parameter |
 | `WEBGPU_NOT_AVAILABLE` | WebGPU requested but unavailable |
 | `WORKER_ERROR` | Internal worker failure |
 | `MINING_ABORTED` | Mining was stopped |
 | `DUST_OUTPUT` | Output below dust limit (310 sats P2WPKH / 330 sats P2TR) |
+
+Notes:
+- A change output is optional. If provided but the computed change would be below the dust limit, the change is omitted and the extra sats are counted as fees.
+- You can also build transactions with no change output (e.g., sweeping a wallet).
 
 ## Runtime Notes
 

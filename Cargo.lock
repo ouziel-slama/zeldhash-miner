@@ -1594,7 +1594,7 @@ checksum = "3ae8337f8a065cfc972643663ea4279e04e7256de865aa66fe25cec5fb912d3f"
 
 [[package]]
 name = "zeldhash-miner"
-version = "0.2.5"
+version = "0.3.0"
 dependencies = [
  "bitcoin",
  "hex",
@@ -1608,7 +1608,7 @@ dependencies = [
 
 [[package]]
 name = "zeldhash-miner-core"
-version = "0.2.5"
+version = "0.3.0"
 dependencies = [
  "base64",
  "bech32",
@@ -1620,7 +1620,7 @@ dependencies = [
 
 [[package]]
 name = "zeldhash-miner-gpu"
-version = "0.2.5"
+version = "0.3.0"
 dependencies = [
  "bytemuck",
  "futures",
@@ -1632,7 +1632,7 @@ dependencies = [
 
 [[package]]
 name = "zeldhash-miner-python-core"
-version = "0.2.5"
+version = "0.3.0"
 dependencies = [
  "zeldhash-miner-core",
  "zeldhash-miner-gpu",
@@ -1640,7 +1640,7 @@ dependencies = [
 
 [[package]]
 name = "zeldhash-miner-wasm"
-version = "0.2.5"
+version = "0.3.0"
 dependencies = [
  "bech32",
  "bitcoin",

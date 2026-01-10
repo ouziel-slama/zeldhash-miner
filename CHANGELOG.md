@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-01-11
+
+### Changed
+
+#### Optional Change Output (Breaking)
+- **Change output is now optional**: Transactions can be built without a change output, enabling wallet sweep use cases
+- **`TransactionPlan.change_index`** is now `Option<usize>` instead of `usize` — `None` when no change output is present
+
+#### Automatic Dust Change Handling
+- **Dust change is automatically omitted**: When change would fall below the dust limit (310 sats P2WPKH / 330 sats P2TR), the change output is removed and the extra sats are counted as miner fees
+- `calculate_change()` now returns `Result<Option<u64>, FeeError>`:
+  - `Ok(Some(amount))` when change is above dust limit
+  - `Ok(None)` when change would be dust (caller should omit the change output)
+  - `Err(InsufficientFunds)` when inputs can't cover outputs + fees
+- When a ZELD distribution is provided and change is omitted, the distribution array is automatically adjusted to match the final output count
+
+### Removed
+
+#### Error Codes (Breaking)
+- **`FeeError::DustOutput`** removed — dust change is now handled gracefully instead of erroring
+- **`MinerError::MissingChangeOutput`** removed — change output is no longer required
+- **TypeScript**: `ZeldMinerErrorCode.NO_CHANGE_OUTPUT` removed
+
+### Fixed
+
+- Updated homepage URLs to `https://zeldhash.com` across all crates and packages
+
+### Migration Guide
+
+**Rust:**
+```rust
+// Before (0.2.x)
+let change_index: usize = plan.change_index;
+
+// After (0.3.0)
+match plan.change_index {
+    Some(idx) => { /* change output at idx */ }
+    None => { /* no change output (dust or sweep) */ }
+}
+```
+
+**TypeScript:**
+```typescript
+// Before (0.2.x) — required exactly one change output
+outputs: [
+  { address: userAddr, amount: 60000, change: false },
+  { address: changeAddr, change: true }, // required
+]
+
+// After (0.3.0) — change is optional; if provided but dust, it's omitted
+outputs: [
+  { address: userAddr, amount: 60000, change: false },
+  // No change output = sweep entire balance minus fees
+]
+```
+
+---
+
 ## [0.2.5] - 2025-12-28
 
 ### Fixed
@@ -173,6 +231,7 @@ zeldhash-miner/
 
 ---
 
+[0.3.0]: https://github.com/zeldhash/zeldhash-miner/releases/tag/v0.3.0
 [0.2.5]: https://github.com/zeldhash/zeldhash-miner/releases/tag/v0.2.5
 [0.2.4]: https://github.com/zeldhash/zeldhash-miner/releases/tag/v0.2.4
 [0.2.3]: https://github.com/zeldhash/zeldhash-miner/releases/tag/v0.2.3

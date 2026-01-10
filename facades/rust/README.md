@@ -2,20 +2,22 @@
 
 Native Rust orchestrator for Zeldhash mining. This crate provides a high-level API to mine Bitcoin transactions with vanity txids (leading zero hex digits).
 
+Learn more at https://zeldhash.com.
+
 The crate ships with CPU + WebGPU support enabled by default. The runtime `use_gpu` option decides whether to attempt the GPU path, with automatic fallback to CPU if GPU initialization fails.
 
 ## Installation
 
 ```toml
 [dependencies]
-zeldhash-miner = "0.1"
+zeldhash-miner = "0.3"
 ```
 
 Or with specific features:
 
 ```toml
 [dependencies]
-zeldhash-miner = { version = "0.1", default-features = false, features = ["cpu", "serde"] }
+zeldhash-miner = { version = "0.3", default-features = false, features = ["cpu", "serde"] }
 ```
 
 ## Quick Start
@@ -186,13 +188,16 @@ match miner.mine_transaction(params, None, None) {
 | `InvalidAddress` | Address parsing failed |
 | `UnsupportedAddressType` | Only P2WPKH and P2TR supported |
 | `InsufficientFunds` | Inputs don't cover outputs + fees |
-| `NoChangeOutput` | No output marked as change |
 | `MultipleChangeOutputs` | More than one change output |
 | `InvalidInput` | Bad parameter (txid, batch_size, etc.) |
 | `WorkerError` | Internal GPU/worker failure |
 | `MiningAborted` | Mining was stopped |
 | `NoMatchingNonce` | Exhausted nonce range without finding match |
-| `DustOutput` | Output below dust limit (546 sats) |
+| `DustOutput` | Output below dust limit (310 sats P2WPKH / 330 sats P2TR) |
+
+Notes:
+- A change output is optional. If provided but the computed change would be below the dust limit, the change is omitted and the extra sats are counted as fees.
+- You can also build transactions with no change output (e.g., sweeping a wallet).
 
 ## Build & Test
 
